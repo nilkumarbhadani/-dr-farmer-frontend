@@ -1,0 +1,162 @@
+export const TRANSLATIONS = {
+  en: {
+    appName: "Dr. Farmer",
+    appTagline: "Crop & Livestock Disease Advisory",
+    farmName: "Crop & Livestock Advisory",
+    voiceAssistant: "Voice Help",
+    speaking: "Speaking...",
+    weather: {
+      title: "Today's Farm Weather",
+      condition: "Partly Cloudy",
+      humidity: "Humidity",
+      soilMoisture: "Soil Moisture",
+      precipitation: "Precipitation",
+      good: "Good",
+      low: "Low",
+      high: "High",
+      moderate: "Moderate"
+    },
+    home: {
+      title: "What do you want to inspect?",
+      subtitle: "Tap to take a photo & diagnose in 3 seconds",
+      cropCheck: "Crop Check",
+      cropDesc: "Leaf spots, rust, pests, stem rot",
+      cattleCheck: "Cattle Check",
+      cattleDesc: "Udder, skin, eyes, mouth, hooves",
+      recordBook: "Farm Record Book",
+      recordDesc: "Past health checks, treatments & reminders",
+      viewAll: "View All Logs",
+      quickAction: "Quick Diagnostics"
+    },
+    camera: {
+      cropMode: "Crop Leaf / Fruit",
+      cattleMode: "Cattle / Animal",
+      instruction: "Point camera at the problem area",
+      tapToCapture: "Tap white circle to capture",
+      uploadPhoto: "Upload Photo",
+      takePhoto: "Take Photo",
+      liveCamera: "Live Camera",
+      testSamples: "Try Sample Cases:",
+      analyzing: "Analyzing with AI...",
+      flash: "Flash"
+    },
+    result: {
+      diagnosis: "Detected Issue",
+      severity: "Severity Level",
+      urgent: "URGENT ACTION NEEDED",
+      caution: "CAUTION / MONITOR",
+      healthy: "HEALTHY & SAFE",
+      homeRemedy: "Home Remedy",
+      medicalTreatment: "Medical Treatment",
+      naturalHerbal: "Natural Herbal Solution",
+      vetAgriPrescription: "Vet / Chemical Treatment",
+      expertBanner: "Severe Condition Detected! Consult a Specialist Immediately.",
+      callExpertBtn: "Call Vet / Krishi Officer",
+      listenAudio: "Listen Advice",
+      saveToRecord: "Save to Record Book",
+      savedAlert: "Saved to Record Book!",
+      shareWhatsApp: "Share to WhatsApp",
+      reScan: "Scan Another"
+    },
+    records: {
+      title: "Farm Record Book",
+      subtitle: "Track treatments, sprays & animal health history",
+      all: "All Logs",
+      crops: "Crops",
+      cattle: "Cattle",
+      vaccines: "Vaccines",
+      newEntry: "New Entry",
+      addRecordModal: "Add Farm Log",
+      type: "Record Type",
+      notes: "Short Note",
+      saveBtn: "Save Record",
+      empty: "No records found in this category."
+    },
+    nav: {
+      home: "Home",
+      scan: "Scan",
+      records: "Record Book",
+      expert: "Call Expert"
+    }
+  },
+  hi: {
+    appName: "डॉ. फार्मर",
+    appTagline: "फसल एवं पशु रोग सलाहकार",
+    farmName: "फसल एवं पशु रोग सलाह",
+    voiceAssistant: "आवाज़ में सुनें",
+    speaking: "बोल रहा है...",
+    weather: {
+      title: "आज का खेत मौसम",
+      condition: "हल्के बादल",
+      humidity: "नमी (हवा)",
+      soilMoisture: "मिट्टी नमी",
+      precipitation: "बारिश",
+      good: "उत्तम",
+      low: "कम",
+      high: "अधिक",
+      moderate: "सामान्य"
+    },
+    home: {
+      title: "आज किसकी जांच करनी है?",
+      subtitle: "फोटो खींचें और 3 सेकंड में सही समाधान पाएं",
+      cropCheck: "फसल जांच",
+      cropDesc: "पत्ती के धब्बे, कीड़े, झुलसा व फफूंद",
+      cattleCheck: "पशु जांच",
+      cattleDesc: "थन, चमड़ी, मुंह, खुर व आंख की जांच",
+      recordBook: "किसान रिकॉर्ड बुक",
+      recordDesc: "पिछली बीमारी, दवा व टीके का पूरा हिसाब",
+      viewAll: "पूरा रिकॉर्ड देखें",
+      quickAction: "त्वरित जांच"
+    },
+    camera: {
+      cropMode: "फसल / पत्ती",
+      cattleMode: "गाय / भैंस / पशु",
+      instruction: "कैमरे को बीमारी वाली जगह पर रखें",
+      tapToCapture: "सफेद गोल बटन दबाकर फोटो लें",
+      uploadPhoto: "गैलरी से चुनें",
+      takePhoto: "फोटो खींचें",
+      liveCamera: "लाइव कैमरा",
+      testSamples: "नमूना फोटो परखें:",
+      analyzing: "एआई द्वारा जांच की जा रही है...",
+      flash: "टॉर्च"
+    },
+    result: {
+      diagnosis: "पहचानी गई बीमारी",
+      severity: "गंभीरता स्तर",
+      urgent: "तुरंत उपचार आवश्यक (खतरा)",
+      caution: "सावधानी / निगरानी रखें",
+      healthy: "पूर्णतः स्वस्थ एवं सुरक्षित",
+      homeRemedy: "देसी नुस्खा",
+      medicalTreatment: "दवा / डॉक्टरी इलाज",
+      naturalHerbal: "प्राकृतिक घरेलू उपचार",
+      vetAgriPrescription: "कृषि / पशु चिकित्सालय दवा",
+      expertBanner: "गंभीर समस्या! तुरंत सरकारी डॉक्टर या विशेषज्ञ से बात करें।",
+      callExpertBtn: "विशेषज्ञ / डॉक्टर को फोन लगाएं",
+      listenAudio: "उपचार आवाज़ में सुनें",
+      saveToRecord: "रिकॉर्ड बुक में जोड़ें",
+      savedAlert: "रिकॉर्ड बुक में सुरक्षित हुआ!",
+      shareWhatsApp: "व्हाट्सएप पर भेजें",
+      reScan: "नई जांच करें"
+    },
+    records: {
+      title: "किसान रिकॉर्ड बुक",
+      subtitle: "दवा, छिड़काव और टीकाकरण का ब्यौरा",
+      all: "सभी",
+      crops: "फसल",
+      cattle: "पशु",
+      vaccines: "टीकाकरण",
+      newEntry: "नया ब्यौरा जोड़ें",
+      addRecordModal: "नया रिकॉर्ड दर्ज करें",
+      type: "प्रकार चुनें",
+      notes: "संक्षिप्त जानकारी",
+      saveBtn: "सुरक्षित करें",
+      empty: "इस श्रेणी में अभी कोई रिकॉर्ड नहीं है।"
+    },
+    nav: {
+      home: "मुख्य पृष्ठ",
+      scan: "जांच करें",
+      records: "रिकॉर्ड",
+      expert: "विशेषज्ञ"
+    }
+  }
+};

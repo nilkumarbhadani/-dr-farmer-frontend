@@ -1,0 +1,91 @@
+<svg width="320" height="360" viewBox="0 0 320 360" xmlns="http://www.w3.org/2000/svg">
+  <!-- Ground -->
+  <ellipse cx="160" cy="345" rx="150" ry="12" fill="#c8e6c9" opacity="0.6"/>
+
+  <!-- Small farmhouse -->
+  <g transform="translate(215,205)">
+    <rect x="0" y="30" width="55" height="42" rx="3" fill="#f5d0a9"/>
+    <polygon points="-6,30 27,5 61,30" fill="#c0392b"/>
+    <rect x="20" y="45" width="16" height="27" fill="#8d5524"/>
+    <rect x="5" y="40" width="10" height="10" fill="#a3d9ff"/>
+  </g>
+
+  <!-- Windmill -->
+  <g transform="translate(30,190)">
+    <rect x="8" y="20" width="3" height="70" fill="#8d6748"/>
+    <circle cx="9.5" cy="20" r="4" fill="#5c4530"/>
+    <g stroke="#7fb069" strokeWidth="3" strokeLinecap="round">
+      <line x1="9.5" y1="20" x2="9.5" y2="0"/>
+      <line x1="9.5" y1="20" x2="27" y2="20"/>
+      <line x1="9.5" y1="20" x2="9.5" y2="40"/>
+      <line x1="9.5" y1="20" x2="-8" y2="20"/>
+    </g>
+  </g>
+
+  <!-- Bushes -->
+  <ellipse cx="70" cy="330" rx="26" ry="14" fill="#66bb6a"/>
+  <ellipse cx="260" cy="335" rx="30" ry="15" fill="#4caf50"/>
+
+  <!-- Farmer character -->
+  <g transform="translate(95,55)">
+    <!-- Legs -->
+    <rect x="18" y="185" width="20" height="55" rx="8" fill="#3e5c3e"/>
+    <rect x="55" y="185" width="20" height="55" rx="8" fill="#3e5c3e"/>
+    <ellipse cx="28" cy="242" rx="14" ry="7" fill="#2b2b2b"/>
+    <ellipse cx="65" cy="242" rx="14" ry="7" fill="#2b2b2b"/>
+
+    <!-- Overalls body -->
+    <path d="M10,110 Q10,95 25,95 L68,95 Q83,95 83,110 L83,195 Q83,205 73,205 L20,205 Q10,205 10,195 Z" fill="#f2a541"/>
+    <rect x="10" y="150" width="73" height="10" fill="#e8952c"/>
+    <!-- overall straps -->
+    <rect x="24" y="70" width="10" height="35" rx="3" fill="#f2a541"/>
+    <rect x="60" y="70" width="10" height="35" rx="3" fill="#f2a541"/>
+    <!-- pocket -->
+    <rect x="35" y="140" width="24" height="20" rx="3" fill="#e8952c"/>
+
+    <!-- Arms -->
+    <path d="M10,115 Q-8,120 -10,145 Q-11,160 2,165" stroke="#f5d0a9" strokeWidth="16" strokeLinecap="round" fill="none"/>
+    <path d="M83,115 Q100,120 100,140 Q100,150 90,155" stroke="#f5d0a9" strokeWidth="16" strokeLinecap="round" fill="none"/>
+
+    <!-- Shirt sleeves -->
+    <path d="M10,110 Q-4,113 -8,132" stroke="#ffffff" strokeWidth="18" strokeLinecap="round" fill="none"/>
+    <path d="M83,110 Q97,113 98,130" stroke="#ffffff" strokeWidth="18" strokeLinecap="round" fill="none"/>
+
+    <!-- Phone in hand -->
+    <rect x="86" y="140" width="16" height="26" rx="3" fill="#2b2b2b"/>
+    <rect x="89" y="144" width="10" height="16" rx="1" fill="#7fd8c9"/>
+
+    <!-- Neck -->
+    <rect x="38" y="55" width="16" height="20" fill="#f5d0a9"/>
+
+    <!-- Head -->
+    <circle cx="46" cy="40" r="28" fill="#f5d0a9"/>
+
+    <!-- Ears -->
+    <circle cx="18" cy="42" r="5" fill="#f5d0a9"/>
+    <circle cx="74" cy="42" r="5" fill="#f5d0a9"/>
+
+    <!-- Hat -->
+    <ellipse cx="46" cy="20" rx="38" ry="9" fill="#e0574c"/>
+    <path d="M20,20 Q46,-10 72,20 Q60,8 46,8 Q32,8 20,20Z" fill="#eb6a5e"/>
+    <ellipse cx="46" cy="10" rx="16" ry="5" fill="#d94f42"/>
+
+    <!-- Face -->
+    <circle cx="36" cy="42" r="2.6" fill="#2b2b2b"/>
+    <circle cx="56" cy="42" r="2.6" fill="#2b2b2b"/>
+    <path d="M36,54 Q46,60 56,54" stroke="#2b2b2b" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+    <circle cx="30" cy="50" r="5" fill="#f2a37a" opacity="0.6"/>
+    <circle cx="62" cy="50" r="5" fill="#f2a37a" opacity="0.6"/>
+  </g>
+
+  <!-- Decorative leaves top-left -->
+  <g transform="translate(10,10)" fill="#4caf50">
+    <ellipse cx="10" cy="10" rx="16" ry="8" transform="rotate(-30 10 10)"/>
+    <ellipse cx="28" cy="30" rx="14" ry="7" transform="rotate(-10 28 30)"/>
+  </g>
+  <!-- Decorative leaves top-right -->
+  <g transform="translate(270,10)" fill="#66bb6a">
+    <ellipse cx="20" cy="10" rx="16" ry="8" transform="rotate(30 20 10)"/>
+    <ellipse cx="5" cy="32" rx="14" ry="7" transform="rotate(10 5 32)"/>
+  </g>
+</svg>
