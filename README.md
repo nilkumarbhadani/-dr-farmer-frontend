@@ -53,12 +53,60 @@ Built to bridge the gap between advanced agricultural science and farmers who ma
 
 **Backend / ML**
 - REST API (FastAPI)
+- TensorFlow Lite — optimized model inference
 - ML model trained on 54,000+ crop & livestock images
-- Image classification for pathology detection
+- Supabase — cloud data sync
 
 ---
 
-<!-- Screenshots and live demo link will be added after deployment -->
+## 🏗️ System Architecture
+
+```mermaid
+flowchart TB
+    subgraph Client["📱 Farmer's Device"]
+        UI[React + Vite Frontend]
+    end
+
+    subgraph Server["☁️ Backend — FastAPI"]
+        API["/api/scan/ endpoint"]
+        Model["TFLite Model<br/>Plant + Livestock"]
+        Catalog["Disease Catalog<br/>Remedies + Treatment"]
+    end
+
+    subgraph Cloud["🗄️ Supabase"]
+        DB[(Record Book<br/>Sync Database)]
+    end
+
+    UI -- "Photo capture" --> API
+    API -- "Preprocessed image" --> Model
+    Model -- "Predicted class index" --> Catalog
+    Catalog -- "Diagnosis + remedy JSON" --> API
+    API -- "Result" --> UI
+    UI -- "Save entry" --> DB
+    DB -- "Sync history" --> UI
+```
+
+---
+
+## 🔄 User Flow
+
+```mermaid
+flowchart LR
+    A[Open App] --> B{Select Mode}
+    B -->|Crop| C[Capture Leaf Photo]
+    B -->|Livestock| D[Capture Animal Photo]
+    C --> E[Send to ML API]
+    D --> E
+    E --> F{Diagnosis Result}
+    F -->|Healthy| G[Show Healthy Status]
+    F -->|Disease Detected| H[Show Severity + Remedy]
+    H --> I[Home Remedy Tab]
+    H --> J[Medical Treatment Tab]
+    H --> K{Severity = Urgent?}
+    K -->|Yes| L[Show Expert Call Banner]
+    G --> M[Save to Record Book]
+    H --> M
+```
 
 ---
 
@@ -67,8 +115,8 @@ Built to bridge the gap between advanced agricultural science and farmers who ma
 Clone the project
 
 ```bash
-git clone https://github.com/nilkumarbhadani/dr-farmer.git
-cd dr-farmer
+git clone https://github.com/nilkumarbhadani/Dr-Farmer-AgriVision.git
+cd Dr-Farmer-AgriVision
 ```
 
 ### 1. Backend Setup
@@ -124,10 +172,11 @@ Content-Type: multipart/form-data
 - [x] Crop & Cattle disease detection UI
 - [x] Hindi/English voice-guided interface
 - [x] Real-time ML model integration
-- [ ] Offline-first support (on-device TFLite inference)
-- [ ] Expanded regional language support
+- [x] TensorFlow Lite optimized inference
+- [x] Live weather integration
+- [x] 8 Indian languages (text support)
+- [ ] Offline-first support (on-device inference without internet)
 - [ ] Extension worker / FPO dashboard view
-- [ ] Weather-integrated diagnosis confidence
 - [ ] Cloud deployment for live demo access
 
 ---
