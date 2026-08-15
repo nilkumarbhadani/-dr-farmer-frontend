@@ -14,6 +14,16 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+# Import tflite-runtime for lightweight, portable deployment
+try:
+    import tflite_runtime.interpreter as tflite
+except Exception:
+    try:
+        from ai_edge_litert import interpreter as tflite
+    except Exception:
+        tflite = None
+
+
 # ==========================================
 # LOAD ENVIRONMENT VARIABLES
 # ==========================================
@@ -88,6 +98,29 @@ PLANT_TFLITE_PATH = os.path.join(BASE_DIR, "dr_farmer_plant_model.tflite")
 LIVESTOCK_TFLITE_PATH = os.path.join(BASE_DIR, "dr_farmer_livestock_model.tflite")
 
 # ==========================================
+# TFLITE INTERPRETER LOADING
+# ==========================================
+plant_interpreter = None
+livestock_interpreter = None
+
+if tflite is not None:
+    try:
+        if os.path.exists(PLANT_TFLITE_PATH):
+            plant_interpreter = tflite.Interpreter(model_path=PLANT_TFLITE_PATH)
+            plant_interpreter.allocate_tensors()
+            logger.info("Plant TFLite interpreter loaded successfully.")
+    except Exception as e:
+        logger.warning(f"Plant TFLite model loading notice: {e}")
+
+    try:
+        if os.path.exists(LIVESTOCK_TFLITE_PATH):
+            livestock_interpreter = tflite.Interpreter(model_path=LIVESTOCK_TFLITE_PATH)
+            livestock_interpreter.allocate_tensors()
+            logger.info("Livestock TFLite interpreter loaded successfully.")
+    except Exception as e:
+        logger.warning(f"Livestock TFLite model loading notice: {e}")
+
+# ==========================================
 # DATA MODELS
 # ==========================================
 class CropCycleCreate(BaseModel):
@@ -118,14 +151,14 @@ class LivestockCreate(BaseModel):
 @app.get("/api/status")
 @app.get("/")
 def read_root():
-    plant_model_exists = os.path.exists(PLANT_TFLITE_PATH)
-    livestock_model_exists = os.path.exists(LIVESTOCK_TFLITE_PATH)
+    plant_model_exists = os.path.exists(PLANT_TFLITE_PATH) or plant_interpreter is not None
+    livestock_model_exists = os.path.exists(LIVESTOCK_TFLITE_PATH) or livestock_interpreter is not None
     return {
         "status": "Dr. Farmer Backend is active",
         "plant_model_loaded": plant_model_exists,
         "livestock_model_loaded": livestock_model_exists,
         "supabase_connected": supabase is not None,
-        "engine": "TFLite / FastAPI Hybrid"
+        "engine": "TFLite Runtime / FastAPI Hybrid"
     }
 
 # --- 1. DIAGNOSTIC SCANNER ---
@@ -143,29 +176,57 @@ async def diagnostic_scan(
         is_plant = entity_type.lower() in ["plant", "crop"]
         fallback_classes = PLANT_DISEASE_CLASSES if is_plant else LIVESTOCK_DISEASE_CLASSES
 
-        # Feature and image color analysis
-        r_mean = float(np.mean(img_array[:, :, 0]))
-        g_mean = float(np.mean(img_array[:, :, 1]))
-        b_mean = float(np.mean(img_array[:, :, 2]))
-
         confidence = 0.96
-        if is_plant:
-            if g_mean > 130 and r_mean < 70 and b_mean < 70:
-                pred_idx = 14  # Healthy
-                confidence = 0.98
-            elif r_mean > 120 and g_mean > 120 and b_mean < 80:
-                pred_idx = 12  # Tomato: Yellow Leaf Curl Virus
-                confidence = 0.93
-            else:
-                pred_idx = 6   # Tomato: Early Blight
-                confidence = 0.96
+        pred_idx = 6 if is_plant else 0  # Default to Tomato: Early Blight or Cattle FMD
+
+        # Execute inference using tflite.Interpreter if available
+        if is_plant and plant_interpreter is not None:
+            try:
+                img_batch = np.expand_dims(img_array, axis=0)
+                input_details = plant_interpreter.get_input_details()
+                output_details = plant_interpreter.get_output_details()
+                plant_interpreter.set_tensor(input_details[0]['index'], img_batch)
+                plant_interpreter.invoke()
+                preds = plant_interpreter.get_tensor(output_details[0]['index'])
+                pred_idx = int(np.argmax(preds[0]))
+                confidence = float(preds[0][pred_idx])
+            except Exception as tf_err:
+                logger.warning(f"Plant TFLite inference notice: {tf_err}")
+        elif not is_plant and livestock_interpreter is not None:
+            try:
+                img_batch = np.expand_dims(img_array, axis=0)
+                input_details = livestock_interpreter.get_input_details()
+                output_details = livestock_interpreter.get_output_details()
+                livestock_interpreter.set_tensor(input_details[0]['index'], img_batch)
+                livestock_interpreter.invoke()
+                preds = livestock_interpreter.get_tensor(output_details[0]['index'])
+                pred_idx = int(np.argmax(preds[0]))
+                confidence = float(preds[0][pred_idx])
+            except Exception as tf_err:
+                logger.warning(f"Livestock TFLite inference notice: {tf_err}")
         else:
-            if r_mean > 110:
-                pred_idx = 2   # Lumpy Skin Disease
-                confidence = 0.94
+            # Fallback color analysis heuristic
+            r_mean = float(np.mean(img_array[:, :, 0]))
+            g_mean = float(np.mean(img_array[:, :, 1]))
+            b_mean = float(np.mean(img_array[:, :, 2]))
+
+            if is_plant:
+                if g_mean > 130 and r_mean < 70 and b_mean < 70:
+                    pred_idx = 14  # Healthy
+                    confidence = 0.98
+                elif r_mean > 120 and g_mean > 120 and b_mean < 80:
+                    pred_idx = 12  # Tomato: Yellow Leaf Curl Virus
+                    confidence = 0.93
+                else:
+                    pred_idx = 6   # Tomato: Early Blight
+                    confidence = 0.96
             else:
-                pred_idx = 0   # Foot and Mouth Disease
-                confidence = 0.95
+                if r_mean > 110:
+                    pred_idx = 2   # Lumpy Skin Disease
+                    confidence = 0.94
+                else:
+                    pred_idx = 0   # Foot and Mouth Disease
+                    confidence = 0.95
 
         # Lookup disease remedy from local fallback dictionary
         fallback_info = fallback_classes.get(pred_idx, fallback_classes.get(6 if is_plant else 0, {}))
@@ -347,7 +408,7 @@ def add_livestock_entry(entry: LivestockCreate):
 TRANSLATIONS = {
     "English": {"status": "Status", "suitable": "Suitable for farming", "remedy": "Remedy", "optimal": "Optimal moisture"},
     "Hindi": {"status": "स्थिति", "suitable": "खेती के लिए उपयुक्त", "remedy": "उपचार", "optimal": "अनुकूल नमी"},
-    "Bengali": {"status": "অবস্থা", "suitable": "চাষের জন্য উপযুক্ত", "remedy": "প্রতিকার", "optimal": "অনুকূল আর্দ্রता"},
+    "Bengali": {"status": "অবস্থা", "suitable": "চাষের জন্য উপযুক্ত", "remedy": "প্রতিকার", "optimal": "অনুকূল আর্দ্রতা"},
     "Telugu": {"status": "స్థితి", "suitable": "వ్యవసాయానికి అనుకూలం", "remedy": "చికిత్స", "optimal": "అనుకూలమైన తేమ"},
     "Marathi": {"status": "स्थिती", "suitable": "शेतीसाठी योग्य", "remedy": "उपाय", "optimal": "इष्टतम ओलावा"},
     "Tamil": {"status": "நிலை", "suitable": "விவசாயத்திற்கு ஏற்றது", "remedy": "தீர்வு", "optimal": "உகந்த ஈரப்பதம்"},
