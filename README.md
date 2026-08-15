@@ -2,13 +2,19 @@
 
 # 🌱 Dr. Farmer
 
-### AI-Powered Crop & Livestock Disease Advisory Platform
+### Full-Stack AI-Powered Crop & Livestock Disease Advisory Platform
 
 Instant, farmer-friendly disease diagnosis for Indian agriculture — built for **Smart India Hackathon (SIH)**
 
 *Team Alpha Beta*
 
 </div>
+
+---
+
+## 🌐 Live Demo
+
+<!-- Live demo link will be added here after deployment -->
 
 ---
 
@@ -52,16 +58,7 @@ Built to bridge the gap between advanced agricultural science and farmers who ma
 
 ---
 
-## 📸 Screenshots
-
-> *Add screenshots of the Home, Camera, and Result screens here before submission*
-
-| Hero | Home | Record |
-|------|-------------|--------|
-| <img width="476" height="839" alt="Screenshot 2026-08-14 at 4 01 53 PM" src="https://github.com/user-attachments/assets/cce6c1fc-bfae-46e6-96c8-300164170ba9" />
- | <img width="353" height="831" alt="Screenshot 2026-08-14 at 4 05 28 PM" src="https://github.com/user-attachments/assets/0608e147-f19f-4b6c-a422-86423d3cc5ee" />
- | <img width="364" height="716" alt="Screenshot 2026-08-14 at 4 06 02 PM" src="https://github.com/user-attachments/assets/0a5fe433-6e07-4b82-a813-9f80d4cb63ed" />
- |
+<!-- Screenshots and live demo link will be added after deployment -->
 
 ---
 
@@ -70,28 +67,25 @@ Built to bridge the gap between advanced agricultural science and farmers who ma
 Clone the project
 
 ```bash
-git clone https://github.com/<your-username>/<repo-name>.git
-```
-
-Go to the project directory
-
-```bash
+git clone https://github.com/nilkumarbhadani/dr-farmer.git
 cd dr-farmer
 ```
 
-Install dependencies
+### 1. Backend Setup
 
 ```bash
-npm install
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
 ```
 
-Start the frontend
+### 2. Frontend Setup
 
 ```bash
+cd frontend
+npm install
 npm run dev
 ```
-
-> **Note:** The backend must be running separately at `http://127.0.0.1:8000` for full disease-detection functionality. See the backend repository/instructions for setup.
 
 ---
 
@@ -156,5 +150,3 @@ Content-Type: multipart/form-data
 - Built for Smart India Hackathon (SIH) internal selection round
 - Trained on a custom dataset of 54,000+ crop and livestock images
 - Designed with accessibility for low-literacy farmers as the core principle
-
-</div>
