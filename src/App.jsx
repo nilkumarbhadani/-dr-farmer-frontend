@@ -132,7 +132,7 @@ export default function App() {
     formData.append('entity_id', 'farm_01');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/scan/', {
+      const response = await fetch('https://dr-farmer-agrivision.onrender.com/api/scan/', {
         method: 'POST',
         body: formData,
       });
