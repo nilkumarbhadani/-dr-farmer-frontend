@@ -1,6 +1,7 @@
 import os
 import io
 import uuid
+import json
 import logging
 from datetime import datetime, timezone
 from typing import Optional
@@ -14,7 +15,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-# Universal TFLite Interpreter Import (ai-edge-litert / tflite-runtime / tensorflow.lite)
+# Universal TFLite / LiteRT Interpreter Import
 tflite = None
 try:
     from ai_edge_litert import interpreter as tflite
@@ -69,31 +70,55 @@ else:
     logger.info("Running in local mode (Supabase optional).")
 
 # ==========================================
-# BUILT-IN DISEASE CATALOG (PLANT & LIVESTOCK)
+# 38-CLASS PLANT DISEASE CATALOG (MATCHING plant_class_mapping.json)
 # ==========================================
 PLANT_DISEASE_CLASSES = {
-    0: {"name": "Pepper Bell: Bacterial Spot", "name_hi": "शिमला मिर्च: जीवाणु धब्बा रोग", "severity": "urgent", "med": "Apply copper-based bactericide/fungicide.", "home": "Spray diluted neem oil solution on affected leaves and avoid overhead watering."},
-    1: {"name": "Pepper Bell: Healthy", "name_hi": "शिमला मिर्च: स्वस्थ", "severity": "healthy", "med": "No medical intervention needed.", "home": "Maintain balanced organic fertilization and regular watering schedule."},
-    2: {"name": "Potato: Early Blight", "name_hi": "आलू: अगेती झुलसा", "severity": "caution", "med": "Apply Mancozeb or Chlorothalonil fungicide.", "home": "Prune infected lower leaves and apply baking soda spray (1 tsp per liter of water)."},
-    3: {"name": "Potato: Late Blight", "name_hi": "आलू: पछेती झुलसा", "severity": "urgent", "med": "Apply systemic fungicide such as Metalaxyl or Dimethomorph.", "home": "Immediately remove and destroy severely blighted plants to prevent spread."},
-    4: {"name": "Potato: Healthy", "name_hi": "आलू: स्वस्थ", "severity": "healthy", "med": "No medical intervention needed.", "home": "Hill soil around stems and maintain regular moisture levels."},
-    5: {"name": "Tomato: Bacterial Spot", "name_hi": "टमाटर: जीवाणु धब्बा रोग", "severity": "urgent", "med": "Spray copper hydroxide spray mixed with Mancozeb.", "home": "Spray dilute compost tea or neem oil, ensure proper plant spacing."},
-    6: {"name": "Tomato: Early Blight", "name_hi": "टमाटर: अगेती झुलसा रोग", "severity": "caution", "med": "Apply copper fungicide or azoxystrobin.", "home": "Remove infected lower foliage and mulch base of the plant."},
-    7: {"name": "Tomato: Late Blight", "name_hi": "टमाटर: पछेती झुलसा", "severity": "urgent", "med": "Apply systemic broad-spectrum fungicide.", "home": "Destroy infected plant tissue immediately; keep leaves dry."},
-    8: {"name": "Tomato: Leaf Mold", "name_hi": "टमाटर: पत्ती फफूंद रोग", "severity": "caution", "med": "Apply calcium polysulfide or copper fungicide.", "home": "Improve airflow and reduce relative humidity around plants."},
-    9: {"name": "Tomato: Septoria Leaf Spot", "name_hi": "टमाटर: सेप्टोरिया पत्ती धब्बा", "severity": "caution", "med": "Apply chlorothalonil or copper fungicide.", "home": "Prune bottom leaves and apply organic mulch to prevent soil splashing."},
-    10: {"name": "Tomato: Spider Mites", "name_hi": "टमाटर: लाल मकड़ी कीट", "severity": "caution", "med": "Apply Abamectin or horticultural miticide.", "home": "Spray underside of leaves with cold water jet or insecticidal soap."},
-    11: {"name": "Tomato: Target Spot", "name_hi": "टमाटर: टारगेट स्पॉट रोग", "severity": "caution", "med": "Apply protectant fungicides (Mancozeb, chlorothalonil).", "home": "Prune excess foliage to enhance air circulation."},
-    12: {"name": "Tomato: Yellow Leaf Curl Virus", "name_hi": "टमाटर: पर्ण कुंचन विषाणु", "severity": "urgent", "med": "Control whitefly vectors using systemic insecticides (Imidacloprid).", "home": "Use yellow sticky traps and cover crops with fine insect netting."},
-    13: {"name": "Tomato: Mosaic Virus", "name_hi": "टमाटर: मोज़ेक विषाणु", "severity": "urgent", "med": "No direct chemical cure; manage insect vectors.", "home": "Isolate infected plants and wash tools with 10% bleach solution."},
-    14: {"name": "Tomato: Healthy", "name_hi": "टमाटर: स्वस्थ", "severity": "healthy", "med": "No medical intervention needed.", "home": "Continue routine watering, weeding, and balanced feeding."},
-    15: {"name": "Plant: Healthy", "name_hi": "पौधा: स्वस्थ", "severity": "healthy", "med": "No medical intervention needed.", "home": "Maintain routine care and sunlight exposure."}
+    0: {"name": "Apple: Apple Scab", "name_hi": "सेब: पपड़ी रोग (Scab)", "severity": "caution", "med": "Apply Mancozeb, Captan, or Myclobutanil fungicide.", "home": "Rake and destroy fallen leaves; prune for optimal air circulation."},
+    1: {"name": "Corn (Maize): Northern Leaf Blight", "name_hi": "मक्का: उत्तरी पत्ती झुलसा रोग", "severity": "urgent", "med": "Apply Mancozeb or Strobilurin fungicides at first sign of lesions.", "home": "Destroy infected stalks and rotate with non-host crops like legumes."},
+    2: {"name": "Corn (Maize): Healthy", "name_hi": "मक्का: स्वस्थ", "severity": "healthy", "med": "No intervention needed.", "home": "Maintain timely irrigation during silking and tasseling phases."},
+    3: {"name": "Grape: Black Rot", "name_hi": "अंगूर: काला सड़न रोग", "severity": "urgent", "med": "Apply Mancozeb, Ziram, or Myclobutanil early season.", "home": "Prune vines to maximize canopy sun penetration and discard dried mummies."},
+    4: {"name": "Grape: Esca (Black Measles)", "name_hi": "अंगूर: एस्का रोग (काला खसरा)", "severity": "urgent", "med": "Apply Fosetyl-Al or trunk wound protectants.", "home": "Avoid pruning in wet weather; remove severely infected vines."},
+    5: {"name": "Grape: Leaf Blight (Isariopsis)", "name_hi": "अंगूर: पत्ती झुलसा रोग", "severity": "caution", "med": "Apply copper oxychloride or Bordeaux mixture.", "home": "Spray neem-based biopesticide and improve canopy aeration."},
+    6: {"name": "Grape: Healthy", "name_hi": "अंगूर: स्वस्थ", "severity": "healthy", "med": "No intervention needed.", "home": "Maintain trellis structure and balanced potassium nutrition."},
+    7: {"name": "Orange: Citrus Greening (Huanglongbing)", "name_hi": "संतरा/नींबू: सिट्रस ग्रीनिंग रोग", "severity": "urgent", "med": "Control Asian citrus psyllid vector with Imidacloprid or Dimethoate.", "home": "Apply foliar micronutrient spray (Zinc, Iron) and remove infected trees."},
+    8: {"name": "Peach: Bacterial Spot", "name_hi": "आड़ू: जीवाणु धब्बा रोग", "severity": "urgent", "med": "Apply Copper hydroxide or Oxytetracycline bactericide.", "home": "Avoid overhead irrigation; spray diluted copper-soap solution."},
+    9: {"name": "Peach: Healthy", "name_hi": "आड़ू: स्वस्थ", "severity": "healthy", "med": "No intervention needed.", "home": "Apply dormant oil spray in winter and maintain root mulch."},
+    10: {"name": "Pepper Bell: Bacterial Spot", "name_hi": "शिमला मिर्च: जीवाणु धब्बा रोग", "severity": "urgent", "med": "Apply copper-based bactericide mixed with Mancozeb.", "home": "Spray diluted neem oil and maintain wide plant spacing."},
+    11: {"name": "Apple: Black Rot", "name_hi": "सेब: काला सड़न रोग", "severity": "urgent", "med": "Apply Thiophanate-methyl or Captan fungicide at petal fall.", "home": "Prune dead wood, remove mummified fruits and cankers."},
+    12: {"name": "Pepper Bell: Healthy", "name_hi": "शिमला मिर्च: स्वस्थ", "severity": "healthy", "med": "No intervention needed.", "home": "Maintain consistent soil moisture and organic compost feeding."},
+    13: {"name": "Potato: Early Blight", "name_hi": "आलू: अगेती झुलसा", "severity": "caution", "med": "Apply Mancozeb, Chlorothalonil, or Azoxystrobin.", "home": "Prune lower yellowing leaves; apply baking soda spray (1 tsp/L)."},
+    14: {"name": "Potato: Late Blight", "name_hi": "आलू: पछेती झुलसा", "severity": "urgent", "med": "Apply systemic Metalaxyl, Dimethomorph, or Cymoxanil.", "home": "Immediately remove and burn blighted foliage; keep tubers dry."},
+    15: {"name": "Potato: Healthy", "name_hi": "आलू: स्वस्थ", "severity": "healthy", "med": "No intervention needed.", "home": "Hill soil properly around potato stems to shield tubers."},
+    16: {"name": "Raspberry: Healthy", "name_hi": "रास्पबेरी: स्वस्थ", "severity": "healthy", "med": "No intervention needed.", "home": "Ensure well-drained soil and adequate trellis support."},
+    17: {"name": "Soybean: Healthy", "name_hi": "सोयाबीन: स्वस्थ", "severity": "healthy", "med": "No intervention needed.", "home": "Practice crop rotation with gram or wheat."},
+    18: {"name": "Squash: Powdery Mildew", "name_hi": "कद्दू/लौकी: चूर्णिल आसिता रोग", "severity": "caution", "med": "Apply Potassium bicarbonate, Sulfur, or Myclobutanil.", "home": "Spray diluted sour buttermilk or neem oil emulsion on leaves."},
+    19: {"name": "Strawberry: Leaf Scorch", "name_hi": "स्ट्रॉबेरी: पत्ती झुलसा (लीफ स्कॉर्च)", "severity": "caution", "med": "Apply Captan or Copper fungicide after harvest.", "home": "Remove dead leaves in autumn and avoid sprinkler watering on foliage."},
+    20: {"name": "Strawberry: Healthy", "name_hi": "स्ट्रॉबेरी: स्वस्थ", "severity": "healthy", "med": "No intervention needed.", "home": "Apply straw mulch around crowns to keep berries off bare soil."},
+    21: {"name": "Tomato: Bacterial Spot", "name_hi": "टमाटर: जीवाणु धब्बा रोग", "severity": "urgent", "med": "Apply copper hydroxide spray mixed with Mancozeb.", "home": "Avoid working with wet plants; disinfect stakes and tools."},
+    22: {"name": "Apple: Cedar Apple Rust", "name_hi": "सेब: देवदार रतुआ रोग", "severity": "caution", "med": "Apply Myclobutanil or Chlorothalonil early in spring.", "home": "Remove nearby red cedar galls and spray neem oil extract."},
+    23: {"name": "Tomato: Early Blight", "name_hi": "टमाटर: अगेती झुलसा रोग", "severity": "caution", "med": "Apply Copper fungicide, Mancozeb, or Chlorothalonil.", "home": "Prune lower leaves up to 12 inches from ground; mulch base."},
+    24: {"name": "Tomato: Late Blight", "name_hi": "टमाटर: पछेती झुलसा रोग", "severity": "urgent", "med": "Apply systemic Metalaxyl or Dimethomorph immediately.", "home": "Destroy infected plants immediately; do not compost blighted tissue."},
+    25: {"name": "Tomato: Leaf Mold", "name_hi": "टमाटर: पत्ती फफूंद रोग", "severity": "caution", "med": "Apply Copper fungicide or Difenoconazole.", "home": "Increase greenhouse ventilation and lower relative humidity below 85%."},
+    26: {"name": "Tomato: Septoria Leaf Spot", "name_hi": "टमाटर: सेप्टोरिया पत्ती धब्बा", "severity": "caution", "med": "Apply Chlorothalonil, Mancozeb, or Copper fungicide.", "home": "Remove lower spotted leaves; water at base with drip line."},
+    27: {"name": "Tomato: Spider Mites", "name_hi": "टमाटर: लाल मकड़ी कीट", "severity": "caution", "med": "Apply Abamectin, Spiromesifen, or Propargite miticide.", "home": "Spray strong water jet under leaves; apply neem oil soap solution."},
+    28: {"name": "Tomato: Target Spot", "name_hi": "टमाटर: टारगेट स्पॉट रोग", "severity": "caution", "med": "Apply Azoxystrobin, Chlorothalonil, or Mancozeb.", "home": "Improve plant spacing for airflow and prune diseased foliage."},
+    29: {"name": "Tomato: Yellow Leaf Curl Virus", "name_hi": "टमाटर: पर्ण कुंचन विषाणु (TYLCV)", "severity": "urgent", "med": "Control whitefly vectors using Imidacloprid or Thiamethoxam.", "home": "Install yellow sticky traps; cover young nursery with 50-mesh net."},
+    30: {"name": "Tomato: Mosaic Virus", "name_hi": "टमाटर: मोज़ेक विषाणु (ToMV)", "severity": "urgent", "med": "No direct chemical cure; manage insect vectors and aphids.", "home": "Isolate infected plants; wash hands with milk/soap before handling."},
+    31: {"name": "Tomato: Healthy", "name_hi": "टमाटर: स्वस्थ", "severity": "healthy", "med": "No intervention needed.", "home": "Continue routine staking, weeding, and balanced NPK feeding."},
+    32: {"name": "Apple: Healthy", "name_hi": "सेब: स्वस्थ", "severity": "healthy", "med": "No intervention needed.", "home": "Maintain regular watering and balanced organic mulching."},
+    33: {"name": "Blueberry: Healthy", "name_hi": "ब्लूबेरी: स्वस्थ", "severity": "healthy", "med": "No intervention needed.", "home": "Maintain acidic soil pH (4.5-5.5) and pine needle mulch."},
+    34: {"name": "Cherry: Powdery Mildew", "name_hi": "चेरी: चूर्णिल आसिता (पाउडरी मिल्ड्यू)", "severity": "caution", "med": "Apply Sulfur spray, Myclobutanil, or Potassium bicarbonate.", "home": "Spray diluted milk-water solution (40:60) or baking soda solution."},
+    35: {"name": "Cherry: Healthy", "name_hi": "चेरी: स्वस्थ", "severity": "healthy", "med": "No intervention needed.", "home": "Ensure good sun exposure and proper seasonal pruning."},
+    36: {"name": "Corn (Maize): Cercospora Leaf Spot", "name_hi": "मक्का: सर्कोस्पोरा पत्ती धब्बा (ग्रे लीफ स्पॉट)", "severity": "caution", "med": "Apply Azoxystrobin, Pyraclostrobin, or Propiconazole.", "home": "Practice crop rotation and till crop residues into soil after harvest."},
+    37: {"name": "Corn (Maize): Common Rust", "name_hi": "मक्का: सामान्य रतुआ रोग", "severity": "caution", "med": "Apply systemic Triazole fungicides if pustules appear early.", "home": "Plant resistant hybrids and ensure balanced nitrogen/potassium feeding."}
 }
 
+# ==========================================
+# 2-CLASS LIVESTOCK DISEASE CATALOG (MATCHING cow_lumpy_class_mapping.json)
+# ==========================================
 LIVESTOCK_DISEASE_CLASSES = {
-    0: {"name": "Foot and Mouth Disease (FMD)", "name_hi": "खुरपका और मुंहपका रोग (FMD)", "severity": "urgent", "med": "Administer prescribed veterinary antibiotics to prevent secondary infection; apply antiseptic mouth/foot wash.", "home": "Isolate animal immediately, provide soft gruel feed, wash lesions with mild potassium permanganate solution."},
-    1: {"name": "Healthy Cattle", "name_hi": "स्वस्थ पशु", "severity": "healthy", "med": "No medical intervention needed.", "home": "Ensure clean drinking water, mineral mixture, and routine vaccination schedule."},
-    2: {"name": "Lumpy Skin Disease", "name_hi": "लम्पी त्वचा रोग (LSD)", "severity": "urgent", "med": "Administer prescribed veterinary NSAIDs (anti-inflammatory) and antibiotics for secondary infections.", "home": "Isolate the animal, apply neem oil / turmeric paste on skin nodules, and protect from vector insects."}
+    0: {"name": "Healthy Cattle", "name_hi": "स्वस्थ पशु", "severity": "healthy", "med": "No medical intervention needed.", "home": "Ensure clean drinking water, balanced green fodder/mineral mixture, and routine vaccination schedule."},
+    1: {"name": "Lumpy Skin Disease (LSD)", "name_hi": "लम्पी त्वचा रोग (LSD)", "severity": "urgent", "med": "Administer prescribed veterinary NSAIDs (anti-inflammatory), fever-reducers, and antibiotics for secondary bacterial infections.", "home": "Isolate the infected animal immediately, apply neem oil / turmeric paste on skin nodules, provide soft nutritious gruel, and spray vector insect repellents around sheds."}
 }
 
 # Model file paths
@@ -111,7 +136,7 @@ if tflite is not None:
         if os.path.exists(PLANT_TFLITE_PATH):
             plant_interpreter = tflite.Interpreter(model_path=PLANT_TFLITE_PATH)
             plant_interpreter.allocate_tensors()
-            logger.info(f"Plant TFLite interpreter loaded successfully from {PLANT_TFLITE_PATH}.")
+            logger.info(f"New 38-Class Plant TFLite interpreter loaded successfully from {PLANT_TFLITE_PATH}.")
     except Exception as e:
         logger.warning(f"Plant TFLite model loading notice: {e}")
 
@@ -119,7 +144,7 @@ if tflite is not None:
         if os.path.exists(LIVESTOCK_TFLITE_PATH):
             livestock_interpreter = tflite.Interpreter(model_path=LIVESTOCK_TFLITE_PATH)
             livestock_interpreter.allocate_tensors()
-            logger.info(f"Livestock TFLite interpreter loaded successfully from {LIVESTOCK_TFLITE_PATH}.")
+            logger.info(f"New 2-Class Livestock TFLite interpreter loaded successfully from {LIVESTOCK_TFLITE_PATH}.")
     except Exception as e:
         logger.warning(f"Livestock TFLite model loading notice: {e}")
 else:
@@ -163,7 +188,7 @@ def read_root():
         "plant_model_loaded": plant_model_exists,
         "livestock_model_loaded": livestock_model_exists,
         "supabase_connected": supabase is not None,
-        "engine": "TFLite / LiteRT AI Engine" if (plant_interpreter is not None) else "TFLite Fallback Engine"
+        "engine": "TFLite / LiteRT AI Engine (38 Plant / 2 Cattle Classes)" if (plant_interpreter is not None) else "TFLite Fallback Engine"
     }
 
 # --- 1. DIAGNOSTIC SCANNER ---
@@ -181,18 +206,16 @@ async def diagnostic_scan(
         is_plant = entity_type.lower() in ["plant", "crop"]
         fallback_classes = PLANT_DISEASE_CLASSES if is_plant else LIVESTOCK_DISEASE_CLASSES
 
-        confidence = 0.96
-        pred_idx = 6 if is_plant else 0
+        confidence = 0.95
+        pred_idx = 23 if is_plant else 0  # Default: Tomato Early Blight (idx 23) or Healthy Cattle (idx 0)
         raw_probabilities = []
+        inference_success = False
 
         # ----------------------------------------------------
         # REAL TFLITE / LITERT INFERENCE EXECUTION
         # ----------------------------------------------------
-        inference_success = False
-
         if is_plant and plant_interpreter is not None:
             try:
-                # Shape: (1, 224, 224, 3) in float32 [0.0, 255.0]
                 img_batch = np.expand_dims(img_array, axis=0)
                 input_details = plant_interpreter.get_input_details()
                 output_details = plant_interpreter.get_output_details()
@@ -206,14 +229,14 @@ async def diagnostic_scan(
                 confidence = float(preds[pred_idx])
                 inference_success = True
 
-                print("\n" + "="*60)
-                print(f"[AI MODEL INFERENCE] Plant Scan Request (Entity ID: {entity_id})")
-                print(f"Top Predicted Class Index: {pred_idx}")
+                print("\n" + "="*65)
+                print(f"[AI INFERENCE] Plant Leaf Scan (Entity ID: {entity_id})")
+                print(f"Top Predicted Class Index: {pred_idx} -> {PLANT_DISEASE_CLASSES.get(pred_idx, {}).get('name')}")
                 print(f"Confidence: {confidence:.4f} ({confidence * 100:.2f}%)")
-                print(f"Raw Probabilities Array ({len(raw_probabilities)} classes):\n{raw_probabilities}")
-                print("="*60 + "\n", flush=True)
+                print(f"Raw Probabilities ({len(raw_probabilities)} classes):\n{raw_probabilities}")
+                print("="*65 + "\n", flush=True)
 
-                logger.info(f"Plant Model Output -> Top Class: {pred_idx}, Confidence: {confidence:.4f}, Probabilities: {raw_probabilities}")
+                logger.info(f"Plant Model Output -> Class: {pred_idx}, Conf: {confidence:.4f}")
             except Exception as tf_err:
                 logger.error(f"Plant TFLite inference error: {tf_err}")
                 inference_success = False
@@ -229,23 +252,23 @@ async def diagnostic_scan(
 
                 preds = livestock_interpreter.get_tensor(output_details[0]['index'])[0]
                 raw_probabilities = [float(p) for p in preds]
-                pred_idx = int(np.argmax(preds)) if len(preds) > 1 else 0
-                confidence = float(preds[pred_idx]) if len(preds) > 0 else 0.95
+                pred_idx = int(np.argmax(preds))
+                confidence = float(preds[pred_idx])
                 inference_success = True
 
-                print("\n" + "="*60)
-                print(f"[AI MODEL INFERENCE] Livestock Scan Request (Entity ID: {entity_id})")
-                print(f"Top Predicted Class Index: {pred_idx}")
-                print(f"Confidence: {confidence:.4f}")
-                print(f"Raw Probabilities Array: {raw_probabilities}")
-                print("="*60 + "\n", flush=True)
+                print("\n" + "="*65)
+                print(f"[AI INFERENCE] Cattle/Livestock Scan (Entity ID: {entity_id})")
+                print(f"Top Predicted Class Index: {pred_idx} -> {LIVESTOCK_DISEASE_CLASSES.get(pred_idx, {}).get('name')}")
+                print(f"Confidence: {confidence:.4f} ({confidence * 100:.2f}%)")
+                print(f"Raw Probabilities ({len(raw_probabilities)} classes):\n{raw_probabilities}")
+                print("="*65 + "\n", flush=True)
 
-                logger.info(f"Livestock Model Output -> Top Class: {pred_idx}, Confidence: {confidence:.4f}")
+                logger.info(f"Livestock Model Output -> Class: {pred_idx}, Conf: {confidence:.4f}")
             except Exception as tf_err:
                 logger.error(f"Livestock TFLite inference error: {tf_err}")
                 inference_success = False
 
-        # If TFLite is not loaded or encountered an error, use heuristic classifier
+        # If TFLite is not loaded, use fallback color analysis
         if not inference_success:
             r_mean = float(np.mean(img_array[:, :, 0]))
             g_mean = float(np.mean(img_array[:, :, 1]))
@@ -253,53 +276,34 @@ async def diagnostic_scan(
 
             if is_plant:
                 if g_mean > 130 and r_mean < 70 and b_mean < 70:
-                    pred_idx = 14  # Healthy
+                    pred_idx = 31  # Tomato: Healthy
                     confidence = 0.98
                 elif r_mean > 120 and g_mean > 120 and b_mean < 80:
-                    pred_idx = 12  # Tomato: Yellow Leaf Curl Virus
+                    pred_idx = 29  # Tomato: Yellow Leaf Curl Virus
                     confidence = 0.93
                 elif r_mean > 100 and g_mean < 90:
-                    pred_idx = 2   # Potato: Early Blight
+                    pred_idx = 13  # Potato: Early Blight
                     confidence = 0.91
                 else:
-                    pred_idx = 6   # Tomato: Early Blight
+                    pred_idx = 23  # Tomato: Early Blight
                     confidence = 0.96
             else:
                 if r_mean > 110:
-                    pred_idx = 2   # Lumpy Skin Disease
+                    pred_idx = 1   # Lumpy Skin Disease
                     confidence = 0.94
                 else:
-                    pred_idx = 0   # Foot and Mouth Disease
+                    pred_idx = 0   # Healthy Cattle
                     confidence = 0.95
 
             logger.info(f"Heuristic Fallback Used -> Class Index: {pred_idx}, Confidence: {confidence}")
 
         # Lookup disease remedy from catalog
-        disease_info = fallback_classes.get(pred_idx, fallback_classes.get(6 if is_plant else 0, {}))
-        pathology = disease_info.get("name", "Plant Issue Detected")
-        pathology_hi = disease_info.get("name_hi", "रोग की पहचान")
+        disease_info = fallback_classes.get(pred_idx, fallback_classes.get(23 if is_plant else 0, {}))
+        pathology = disease_info.get("name", "Crop/Livestock Condition")
+        pathology_hi = disease_info.get("name_hi", "स्थिति की पहचान")
         severity = disease_info.get("severity", "caution")
-        medical_remedy = disease_info.get("med", "Consult local agricultural extension officer.")
-        home_remedy = disease_info.get("home", "Ensure adequate watering and good airflow.")
-
-        # Try fetching enhanced description from Supabase if connected
-        if supabase:
-            try:
-                db_entity_type = "CROP" if is_plant else "LIVESTOCK"
-                db_resp = supabase.table("disease_catalog") \
-                    .select("*") \
-                    .eq("model_index", pred_idx) \
-                    .eq("entity_type", db_entity_type) \
-                    .execute()
-                if db_resp.data and len(db_resp.data) > 0:
-                    matched = db_resp.data[0]
-                    pathology = matched.get("disease_name", pathology)
-                    pathology_hi = matched.get("disease_name_hi", pathology_hi)
-                    severity = matched.get("severity", severity)
-                    medical_remedy = matched.get("med_remedy", medical_remedy)
-                    home_remedy = matched.get("home_remedy", home_remedy)
-            except Exception as e:
-                logger.warning(f"Catalog query notice: {e}")
+        medical_remedy = disease_info.get("med", "Consult local agricultural/veterinary expert.")
+        home_remedy = disease_info.get("home", "Maintain proper sanitation and regular care.")
 
         scan_id = str(uuid.uuid4())
         timestamp = datetime.now(timezone.utc).isoformat()
