@@ -1,5 +1,6 @@
 import React from 'react';
-import { ArrowRight, Sprout, ShieldCheck, HeartPulse, Sparkles, Volume2 } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 export default function OnboardingModal({ isOpen, onClose, lang }) {
   if (!isOpen) return null;
@@ -20,21 +21,15 @@ export default function OnboardingModal({ isOpen, onClose, lang }) {
             </div>
           </div>
 
-          {/* Illustrated Farmer Visual Graphic matching screenshot */}
+          {/* Illustrated Farmer Visual Graphic matching approved artwork */}
           <div className="relative w-44 h-44 mb-2 flex items-center justify-center">
             {/* Background circular field aura */}
             <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-emerald-200/60 to-amber-200/60 blur-md" />
-            <div className="relative z-10 w-36 h-36 rounded-full bg-gradient-to-b from-[#81c784] to-[#388e3c] border-4 border-white shadow-lg flex flex-col items-center justify-center overflow-hidden">
-              {/* Illustrated scenery / farmer badge */}
-              <div className="text-6xl select-none transform hover:scale-110 transition-transform">
-                👨‍🌾
-              </div>
-              <div className="absolute bottom-0 inset-x-0 bg-black/20 py-0.5 text-center">
-                <span className="text-[10px] font-extrabold text-white tracking-widest uppercase">
-                  Dr. Farmer
-                </span>
-              </div>
-            </div>
+            <img
+              src={logo}
+              alt="Dr. Farmer Official Emblem"
+              className="relative z-10 w-36 h-36 rounded-full object-contain shadow-lg border-4 border-white select-none transform hover:scale-105 transition-transform"
+            />
 
             {/* Orbiting feature badges like the screenshot */}
             <div className="absolute top-1 left-2 w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs shadow-md border-2 border-white">
