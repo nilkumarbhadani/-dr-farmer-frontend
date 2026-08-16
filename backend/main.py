@@ -14,15 +14,18 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-# Import tflite-runtime for lightweight, portable deployment
+# Universal TFLite Interpreter Import (ai-edge-litert / tflite-runtime / tensorflow.lite)
+tflite = None
 try:
-    import tflite_runtime.interpreter as tflite
+    from ai_edge_litert import interpreter as tflite
 except Exception:
     try:
-        from ai_edge_litert import interpreter as tflite
+        import tflite_runtime.interpreter as tflite
     except Exception:
-        tflite = None
-
+        try:
+            import tensorflow.lite as tflite
+        except Exception:
+            tflite = None
 
 # ==========================================
 # LOAD ENVIRONMENT VARIABLES
@@ -32,7 +35,7 @@ load_dotenv(os.path.join(BASE_DIR, ".env.local"))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 logger = logging.getLogger("dr_farmer")
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 app = FastAPI(title="Dr. Farmer Enterprise Backend", version="2.0")
 
@@ -66,7 +69,7 @@ else:
     logger.info("Running in local mode (Supabase optional).")
 
 # ==========================================
-# BUILT-IN DISEASE CATALOG (OFFLINE / FALLBACK)
+# BUILT-IN DISEASE CATALOG (PLANT & LIVESTOCK)
 # ==========================================
 PLANT_DISEASE_CLASSES = {
     0: {"name": "Pepper Bell: Bacterial Spot", "name_hi": "शिमला मिर्च: जीवाणु धब्बा रोग", "severity": "urgent", "med": "Apply copper-based bactericide/fungicide.", "home": "Spray diluted neem oil solution on affected leaves and avoid overhead watering."},
@@ -108,7 +111,7 @@ if tflite is not None:
         if os.path.exists(PLANT_TFLITE_PATH):
             plant_interpreter = tflite.Interpreter(model_path=PLANT_TFLITE_PATH)
             plant_interpreter.allocate_tensors()
-            logger.info("Plant TFLite interpreter loaded successfully.")
+            logger.info(f"Plant TFLite interpreter loaded successfully from {PLANT_TFLITE_PATH}.")
     except Exception as e:
         logger.warning(f"Plant TFLite model loading notice: {e}")
 
@@ -116,9 +119,11 @@ if tflite is not None:
         if os.path.exists(LIVESTOCK_TFLITE_PATH):
             livestock_interpreter = tflite.Interpreter(model_path=LIVESTOCK_TFLITE_PATH)
             livestock_interpreter.allocate_tensors()
-            logger.info("Livestock TFLite interpreter loaded successfully.")
+            logger.info(f"Livestock TFLite interpreter loaded successfully from {LIVESTOCK_TFLITE_PATH}.")
     except Exception as e:
         logger.warning(f"Livestock TFLite model loading notice: {e}")
+else:
+    logger.warning("TFLite runtime library not available; running in hybrid heuristic mode.")
 
 # ==========================================
 # DATA MODELS
@@ -158,7 +163,7 @@ def read_root():
         "plant_model_loaded": plant_model_exists,
         "livestock_model_loaded": livestock_model_exists,
         "supabase_connected": supabase is not None,
-        "engine": "TFLite Runtime / FastAPI Hybrid"
+        "engine": "TFLite / LiteRT AI Engine" if (plant_interpreter is not None) else "TFLite Fallback Engine"
     }
 
 # --- 1. DIAGNOSTIC SCANNER ---
@@ -177,35 +182,71 @@ async def diagnostic_scan(
         fallback_classes = PLANT_DISEASE_CLASSES if is_plant else LIVESTOCK_DISEASE_CLASSES
 
         confidence = 0.96
-        pred_idx = 6 if is_plant else 0  # Default to Tomato: Early Blight or Cattle FMD
+        pred_idx = 6 if is_plant else 0
+        raw_probabilities = []
 
-        # Execute inference using tflite.Interpreter if available
+        # ----------------------------------------------------
+        # REAL TFLITE / LITERT INFERENCE EXECUTION
+        # ----------------------------------------------------
+        inference_success = False
+
         if is_plant and plant_interpreter is not None:
             try:
+                # Shape: (1, 224, 224, 3) in float32 [0.0, 255.0]
                 img_batch = np.expand_dims(img_array, axis=0)
                 input_details = plant_interpreter.get_input_details()
                 output_details = plant_interpreter.get_output_details()
+
                 plant_interpreter.set_tensor(input_details[0]['index'], img_batch)
                 plant_interpreter.invoke()
-                preds = plant_interpreter.get_tensor(output_details[0]['index'])
-                pred_idx = int(np.argmax(preds[0]))
-                confidence = float(preds[0][pred_idx])
+
+                preds = plant_interpreter.get_tensor(output_details[0]['index'])[0]
+                raw_probabilities = [float(p) for p in preds]
+                pred_idx = int(np.argmax(preds))
+                confidence = float(preds[pred_idx])
+                inference_success = True
+
+                print("\n" + "="*60)
+                print(f"[AI MODEL INFERENCE] Plant Scan Request (Entity ID: {entity_id})")
+                print(f"Top Predicted Class Index: {pred_idx}")
+                print(f"Confidence: {confidence:.4f} ({confidence * 100:.2f}%)")
+                print(f"Raw Probabilities Array ({len(raw_probabilities)} classes):\n{raw_probabilities}")
+                print("="*60 + "\n", flush=True)
+
+                logger.info(f"Plant Model Output -> Top Class: {pred_idx}, Confidence: {confidence:.4f}, Probabilities: {raw_probabilities}")
             except Exception as tf_err:
-                logger.warning(f"Plant TFLite inference notice: {tf_err}")
+                logger.error(f"Plant TFLite inference error: {tf_err}")
+                inference_success = False
+
         elif not is_plant and livestock_interpreter is not None:
             try:
                 img_batch = np.expand_dims(img_array, axis=0)
                 input_details = livestock_interpreter.get_input_details()
                 output_details = livestock_interpreter.get_output_details()
+
                 livestock_interpreter.set_tensor(input_details[0]['index'], img_batch)
                 livestock_interpreter.invoke()
-                preds = livestock_interpreter.get_tensor(output_details[0]['index'])
-                pred_idx = int(np.argmax(preds[0]))
-                confidence = float(preds[0][pred_idx])
+
+                preds = livestock_interpreter.get_tensor(output_details[0]['index'])[0]
+                raw_probabilities = [float(p) for p in preds]
+                pred_idx = int(np.argmax(preds)) if len(preds) > 1 else 0
+                confidence = float(preds[pred_idx]) if len(preds) > 0 else 0.95
+                inference_success = True
+
+                print("\n" + "="*60)
+                print(f"[AI MODEL INFERENCE] Livestock Scan Request (Entity ID: {entity_id})")
+                print(f"Top Predicted Class Index: {pred_idx}")
+                print(f"Confidence: {confidence:.4f}")
+                print(f"Raw Probabilities Array: {raw_probabilities}")
+                print("="*60 + "\n", flush=True)
+
+                logger.info(f"Livestock Model Output -> Top Class: {pred_idx}, Confidence: {confidence:.4f}")
             except Exception as tf_err:
-                logger.warning(f"Livestock TFLite inference notice: {tf_err}")
-        else:
-            # Fallback color analysis heuristic
+                logger.error(f"Livestock TFLite inference error: {tf_err}")
+                inference_success = False
+
+        # If TFLite is not loaded or encountered an error, use heuristic classifier
+        if not inference_success:
             r_mean = float(np.mean(img_array[:, :, 0]))
             g_mean = float(np.mean(img_array[:, :, 1]))
             b_mean = float(np.mean(img_array[:, :, 2]))
@@ -217,6 +258,9 @@ async def diagnostic_scan(
                 elif r_mean > 120 and g_mean > 120 and b_mean < 80:
                     pred_idx = 12  # Tomato: Yellow Leaf Curl Virus
                     confidence = 0.93
+                elif r_mean > 100 and g_mean < 90:
+                    pred_idx = 2   # Potato: Early Blight
+                    confidence = 0.91
                 else:
                     pred_idx = 6   # Tomato: Early Blight
                     confidence = 0.96
@@ -228,15 +272,17 @@ async def diagnostic_scan(
                     pred_idx = 0   # Foot and Mouth Disease
                     confidence = 0.95
 
-        # Lookup disease remedy from local fallback dictionary
-        fallback_info = fallback_classes.get(pred_idx, fallback_classes.get(6 if is_plant else 0, {}))
-        pathology = fallback_info.get("name", "Tomato: Early Blight")
-        pathology_hi = fallback_info.get("name_hi", "टमाटर: अगेती झुलसा रोग")
-        severity = fallback_info.get("severity", "caution")
-        medical_remedy = fallback_info.get("med", "Apply copper fungicide or azoxystrobin.")
-        home_remedy = fallback_info.get("home", "Remove infected lower foliage and mulch base of the plant.")
+            logger.info(f"Heuristic Fallback Used -> Class Index: {pred_idx}, Confidence: {confidence}")
 
-        # Try fetching from Supabase disease_catalog if connected
+        # Lookup disease remedy from catalog
+        disease_info = fallback_classes.get(pred_idx, fallback_classes.get(6 if is_plant else 0, {}))
+        pathology = disease_info.get("name", "Plant Issue Detected")
+        pathology_hi = disease_info.get("name_hi", "रोग की पहचान")
+        severity = disease_info.get("severity", "caution")
+        medical_remedy = disease_info.get("med", "Consult local agricultural extension officer.")
+        home_remedy = disease_info.get("home", "Ensure adequate watering and good airflow.")
+
+        # Try fetching enhanced description from Supabase if connected
         if supabase:
             try:
                 db_entity_type = "CROP" if is_plant else "LIVESTOCK"
@@ -253,7 +299,7 @@ async def diagnostic_scan(
                     medical_remedy = matched.get("med_remedy", medical_remedy)
                     home_remedy = matched.get("home_remedy", home_remedy)
             except Exception as e:
-                logger.warning(f"Catalog query fallback: {e}")
+                logger.warning(f"Catalog query notice: {e}")
 
         scan_id = str(uuid.uuid4())
         timestamp = datetime.now(timezone.utc).isoformat()
@@ -271,7 +317,7 @@ async def diagnostic_scan(
                     "sync_status": "SYNCED"
                 }).execute()
             except Exception as db_err:
-                logger.warning(f"Supabase logging warning: {db_err}")
+                logger.warning(f"Supabase logging notice: {db_err}")
 
         return {
             "scan_id": scan_id,
@@ -281,7 +327,9 @@ async def diagnostic_scan(
             "severity": severity,
             "confidence_score": round(confidence, 4),
             "medical_remedy": medical_remedy,
-            "home_remedy": home_remedy
+            "home_remedy": home_remedy,
+            "raw_probabilities": raw_probabilities,
+            "predicted_class_index": pred_idx
         }
 
     except Exception as e:
