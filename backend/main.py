@@ -8,8 +8,10 @@ from typing import Optional
 import numpy as np
 from PIL import Image
 from pydantic import BaseModel
-import requests
-import speech_recognition as sr
+try:
+    import speech_recognition as sr
+except ImportError:
+    sr = None
 import shutil
 from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
@@ -54,7 +56,7 @@ app.add_middleware(
 # ==========================================
 # SUPABASE CONFIGURATION (GRACEFUL FALLBACK)
 # ==========================================
-SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").replace("/rest/v1", "").rstrip("/")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
 supabase = None
@@ -121,9 +123,11 @@ LIVESTOCK_DISEASE_CLASSES = {
     1: {"name": "Lumpy Skin Disease (LSD)", "name_hi": "लम्पी त्वचा रोग (LSD)", "severity": "urgent", "med": "Administer prescribed veterinary NSAIDs (anti-inflammatory), fever-reducers, and antibiotics for secondary bacterial infections.", "home": "Isolate the infected animal immediately, apply neem oil / turmeric paste on skin nodules, provide soft nutritious gruel, and spray vector insect repellents around sheds."}
 }
 
-# Model file paths
-PLANT_TFLITE_PATH = os.path.join(BASE_DIR, "dr_farmer_plant_model.tflite")
-LIVESTOCK_TFLITE_PATH = os.path.join(BASE_DIR, "dr_farmer_livestock_model.tflite")
+# ==========================================
+# MODEL FILE PATHS
+# ==========================================
+PLANT_TFLITE_PATH = os.path.join(BASE_DIR, "plant_disease_model_package", "plant_disease_model.tflite")
+LIVESTOCK_TFLITE_PATH = os.path.join(BASE_DIR, "Animal_Disease_full_model_package", "cow_lumpy_model.tflite")
 
 # ==========================================
 # TFLITE INTERPRETER LOADING
@@ -136,7 +140,9 @@ if tflite is not None:
         if os.path.exists(PLANT_TFLITE_PATH):
             plant_interpreter = tflite.Interpreter(model_path=PLANT_TFLITE_PATH)
             plant_interpreter.allocate_tensors()
-            logger.info(f"New 38-Class Plant TFLite interpreter loaded successfully from {PLANT_TFLITE_PATH}.")
+            logger.info(f"Plant TFLite interpreter loaded successfully from {PLANT_TFLITE_PATH}.")
+        else:
+            logger.warning(f"Plant TFLite model not found at {PLANT_TFLITE_PATH}.")
     except Exception as e:
         logger.warning(f"Plant TFLite model loading notice: {e}")
 
@@ -144,7 +150,9 @@ if tflite is not None:
         if os.path.exists(LIVESTOCK_TFLITE_PATH):
             livestock_interpreter = tflite.Interpreter(model_path=LIVESTOCK_TFLITE_PATH)
             livestock_interpreter.allocate_tensors()
-            logger.info(f"New 2-Class Livestock TFLite interpreter loaded successfully from {LIVESTOCK_TFLITE_PATH}.")
+            logger.info(f"Livestock TFLite interpreter loaded successfully from {LIVESTOCK_TFLITE_PATH}.")
+        else:
+            logger.warning(f"Livestock TFLite model not found at {LIVESTOCK_TFLITE_PATH}.")
     except Exception as e:
         logger.warning(f"Livestock TFLite model loading notice: {e}")
 else:
@@ -297,13 +305,31 @@ async def diagnostic_scan(
 
             logger.info(f"Heuristic Fallback Used -> Class Index: {pred_idx}, Confidence: {confidence}")
 
-        # Lookup disease remedy from catalog
+        # Lookup disease remedy from Supabase disease_catalog if available, else local catalog
         disease_info = fallback_classes.get(pred_idx, fallback_classes.get(23 if is_plant else 0, {}))
         pathology = disease_info.get("name", "Crop/Livestock Condition")
         pathology_hi = disease_info.get("name_hi", "स्थिति की पहचान")
         severity = disease_info.get("severity", "caution")
         medical_remedy = disease_info.get("med", "Consult local agricultural/veterinary expert.")
         home_remedy = disease_info.get("home", "Maintain proper sanitation and regular care.")
+
+        if supabase:
+            try:
+                cat_resp = supabase.table("disease_catalog") \
+                    .select("*") \
+                    .eq("entity_type", entity_type) \
+                    .eq("class_index", pred_idx) \
+                    .limit(1) \
+                    .execute()
+                if cat_resp.data and len(cat_resp.data) > 0:
+                    row = cat_resp.data[0]
+                    pathology = row.get("disease_name", pathology)
+                    pathology_hi = row.get("disease_name_hi", pathology_hi)
+                    severity = row.get("severity", severity)
+                    medical_remedy = row.get("medical_treatment", medical_remedy)
+                    home_remedy = row.get("home_remedy", home_remedy)
+            except Exception as cat_err:
+                logger.warning(f"Supabase disease_catalog lookup fallback: {cat_err}")
 
         scan_id = str(uuid.uuid4())
         timestamp = datetime.now(timezone.utc).isoformat()
@@ -456,7 +482,53 @@ def add_livestock_entry(entry: LivestockCreate):
             logger.warning(f"Supabase livestock log insert warning: {e}")
     return {"message": "Livestock vaccination record logged successfully", "data": res_data}
 
-# --- 6. TRANSLATIONS ---
+@app.get("/api/livestock/{farmer_id}")
+def get_livestock_entries(farmer_id: str):
+    if not supabase:
+        return []
+    try:
+        response = supabase.table("livestock_profiles").select("*").eq("farmer_id", farmer_id).execute()
+        return response.data or []
+    except Exception as e:
+        logger.warning(f"Error fetching livestock entries: {e}")
+        return []
+
+# --- 6. DIAGNOSTIC SCAN LOGS ---
+@app.get("/api/diagnostic-logs/{farmer_id}")
+def get_diagnostic_logs(farmer_id: str):
+    if not supabase:
+        return []
+    try:
+        response = supabase.table("diagnostic_logs").select("*").eq("entity_id", farmer_id).order("scan_timestamp", desc=True).limit(50).execute()
+        return response.data or []
+    except Exception as e:
+        logger.warning(f"Error fetching diagnostic logs: {e}")
+        return []
+
+# --- 7. DISEASE CATALOG QUERY ---
+@app.get("/api/disease-catalog/")
+def get_disease_catalog(entity_type: Optional[str] = None):
+    if supabase:
+        try:
+            query = supabase.table("disease_catalog").select("*")
+            if entity_type:
+                query = query.eq("entity_type", entity_type)
+            resp = query.execute()
+            if resp.data:
+                return resp.data
+        except Exception as e:
+            logger.warning(f"Supabase disease catalog query warning: {e}")
+    # Fallback to local catalog
+    results = []
+    if not entity_type or entity_type == "plant":
+        for k, v in PLANT_DISEASE_CLASSES.items():
+            results.append({"entity_type": "plant", "class_index": k, "disease_name": v["name"], "disease_name_hi": v["name_hi"], "severity": v["severity"], "medical_treatment": v["med"], "home_remedy": v["home"]})
+    if not entity_type or entity_type == "livestock":
+        for k, v in LIVESTOCK_DISEASE_CLASSES.items():
+            results.append({"entity_type": "livestock", "class_index": k, "disease_name": v["name"], "disease_name_hi": v["name_hi"], "severity": v["severity"], "medical_treatment": v["med"], "home_remedy": v["home"]})
+    return results
+
+# --- 8. TRANSLATIONS ---
 TRANSLATIONS = {
     "English": {"status": "Status", "suitable": "Suitable for farming", "remedy": "Remedy", "optimal": "Optimal moisture"},
     "Hindi": {"status": "स्थिति", "suitable": "खेती के लिए उपयुक्त", "remedy": "उपचार", "optimal": "अनुकूल नमी"},

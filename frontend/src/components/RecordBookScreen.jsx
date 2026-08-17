@@ -12,7 +12,7 @@ import {
   CloudSync
 } from 'lucide-react';
 import { TRANSLATIONS } from '../data/translations';
-import { addCropCycle, addLivestockEntry, getCropCycles } from '../utils/api';
+import { addCropCycle, addLivestockEntry, getCropCycles, getLivestockEntries } from '../utils/api';
 
 export default function RecordBookScreen({ 
   records, 
@@ -31,28 +31,55 @@ export default function RecordBookScreen({
   const [newType, setNewType] = useState('spray'); // 'spray' | 'vaccine' | 'disease' | 'treatment'
   const [newNotes, setNewNotes] = useState('');
 
-  // Fetch initial crop cycles from backend Supabase table on load
+  // Fetch initial crop cycles & livestock from backend Supabase tables on load
   useEffect(() => {
-    async function loadBackendCropCycles() {
+    async function loadBackendData() {
       try {
         setIsSyncing(true);
-        const cycles = await getCropCycles('farm_01');
-        if (Array.isArray(cycles) && cycles.length > 0) {
-          const remoteRecords = cycles.map(c => ({
-            id: c.crop_id || `crop-${Date.now()}`,
-            date: c.sowing_date || new Date().toLocaleDateString('en-GB'),
-            category: 'crop',
-            type: 'spray',
-            title: c.crop_name ? `${c.crop_name} (${c.season})` : 'Crop Record',
-            titleHi: c.crop_name ? `${c.crop_name} (${c.season})` : 'फसल रिकॉर्ड',
-            diseaseName: `Sown: ${c.sowing_date} • Expected Harvest: ${c.expected_harvest_date}`,
-            status: c.safe_for_fodder ? 'Healthy' : 'Active',
-            severity: 'healthy',
-            description: `Pesticide applied: ${c.pesticide_applied ? 'Yes' : 'No'} | Safe fodder: ${c.safe_for_fodder ? 'Yes' : 'No'}`,
-            icon: 'sprout'
-          }));
+        const [cycles, livestock] = await Promise.allSettled([
+          getCropCycles('farm_01'),
+          getLivestockEntries('farm_01')
+        ]);
 
-          // Merge without duplicate IDs
+        const remoteRecords = [];
+
+        if (cycles.status === 'fulfilled' && Array.isArray(cycles.value)) {
+          cycles.value.forEach(c => {
+            remoteRecords.push({
+              id: c.crop_id || `crop-${Date.now()}-${Math.random()}`,
+              date: c.sowing_date || new Date().toLocaleDateString('en-GB'),
+              category: 'crop',
+              type: 'spray',
+              title: c.crop_name ? `${c.crop_name} (${c.season})` : 'Crop Record',
+              titleHi: c.crop_name ? `${c.crop_name} (${c.season})` : 'फसल रिकॉर्ड',
+              diseaseName: `Sown: ${c.sowing_date} • Expected Harvest: ${c.expected_harvest_date}`,
+              status: c.safe_for_fodder ? 'Healthy' : 'Active',
+              severity: 'healthy',
+              description: `Pesticide applied: ${c.pesticide_applied ? 'Yes' : 'No'} | Safe fodder: ${c.safe_for_fodder ? 'Yes' : 'No'}`,
+              icon: 'sprout'
+            });
+          });
+        }
+
+        if (livestock.status === 'fulfilled' && Array.isArray(livestock.value)) {
+          livestock.value.forEach(l => {
+            remoteRecords.push({
+              id: `live-${l.id || l.animal_tag}-${Date.now()}`,
+              date: l.last_vaccination_date || new Date().toLocaleDateString('en-GB'),
+              category: 'cattle',
+              type: 'vaccine',
+              title: `${l.species || 'Cattle'} - ${l.animal_tag || 'Tag'}`,
+              titleHi: `${l.species || 'पशु'} - ${l.animal_tag || 'टैग'}`,
+              diseaseName: `Vaccine: ${l.vaccination_name || 'General'}`,
+              status: 'Active',
+              severity: 'healthy',
+              description: `Next due date: ${l.next_due_date || 'N/A'}`,
+              icon: 'syringe'
+            });
+          });
+        }
+
+        if (remoteRecords.length > 0) {
           setRecords(prev => {
             const existingIds = new Set(prev.map(p => p.id));
             const uniqueRemote = remoteRecords.filter(r => !existingIds.has(r.id));
@@ -65,7 +92,7 @@ export default function RecordBookScreen({
         setIsSyncing(false);
       }
     }
-    loadBackendCropCycles();
+    loadBackendData();
   }, []);
 
   // Filtered records

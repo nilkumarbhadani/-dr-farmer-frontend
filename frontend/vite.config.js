@@ -8,7 +8,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://dr-farmer-agrivision.onrender.com',
+        target: 'https://dr-farmer-3-0.onrender.com',
         changeOrigin: true,
         secure: false,
       },

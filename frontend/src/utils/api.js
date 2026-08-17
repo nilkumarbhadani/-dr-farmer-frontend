@@ -4,7 +4,7 @@
  * Supports relative proxying, direct localhost:8000, and offline fallback.
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://dr-farmer-agrivision.onrender.com';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://dr-farmer-3-0.onrender.com';
 
 async function fetchWithFallback(endpoint, options = {}) {
   // 1. Try relative endpoint first (works with Vite proxy / Netlify / relative routing)
@@ -146,6 +146,31 @@ export async function addLivestockEntry(livestockData) {
       next_due_date: livestockData.next_due_date || new Date().toISOString().split('T')[0]
     })
   });
+}
+
+/**
+ * Fetch Livestock Entries
+ * GET /api/livestock/{farmer_id}
+ */
+export async function getLivestockEntries(farmerId = 'farm_01') {
+  return await fetchWithFallback(`/api/livestock/${farmerId}`);
+}
+
+/**
+ * Fetch Diagnostic Logs History
+ * GET /api/diagnostic-logs/{farmer_id}
+ */
+export async function getDiagnosticLogs(farmerId = 'farm_01') {
+  return await fetchWithFallback(`/api/diagnostic-logs/${farmerId}`);
+}
+
+/**
+ * Fetch Disease Catalog
+ * GET /api/disease-catalog/?entity_type={plant|livestock}
+ */
+export async function getDiseaseCatalog(entityType = null) {
+  const query = entityType ? `?entity_type=${entityType}` : '';
+  return await fetchWithFallback(`/api/disease-catalog/${query}`);
 }
 
 /**
