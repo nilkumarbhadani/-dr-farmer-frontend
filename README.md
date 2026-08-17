@@ -241,7 +241,7 @@ npm run dev
 - [x] Cloud deployment (Vercel + Render)
 - [ ] Offline-first support (on-device inference without internet)
 - [ ] Extension worker / FPO dashboard view
-- [] Expanded voice support across all 8 languages
+- [ ] Expanded voice support across all 8 languages
 
 ---
 
