@@ -221,15 +221,40 @@ export default function ResultScreen({
       {/* 2. DIAGNOSIS CARD: DISEASE NAME + SEVERITY BADGE + PHOTO */}
       <div className="bg-white rounded-3xl p-5 shadow-sm border border-[#e5dcce]">
         
-        {/* Severity Badge */}
+        {/* Severity Badge & Confidence Badge */}
         <div className="flex items-center justify-between mb-3">
           <span className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide shadow-xs ${config.bg} ${config.textColor}`}>
             <SeverityIcon className="w-3.5 h-3.5" />
             <span>{config.label}</span>
           </span>
-          <span className="text-xs font-bold text-[#647464]">
-            {lang === 'hi' ? `सटीकता: ${result.confidence}` : `Accuracy: ${result.confidence}`}
-          </span>
+
+          {/* Model Prediction Confidence (High vs Low / N/A) */}
+          {(() => {
+            const isLow = result.isConfident === false || result.confidenceStatus === 'low_confidence';
+            const isNA = !result.confidence || result.confidence === 'N/A' || result.confidence === 'उपलब्ध नहीं';
+            const displayConf = isNA ? (lang === 'hi' ? 'उपलब्ध नहीं' : 'N/A') : result.confidence;
+
+            if (isLow) {
+              return (
+                <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                  <span>
+                    {isNA
+                      ? (lang === 'hi' ? 'विश्वास: उपलब्ध नहीं' : 'Confidence: N/A')
+                      : (lang === 'hi' ? `विश्वास: ${displayConf} (कम)` : `Confidence: ${displayConf} (Low)`)}
+                  </span>
+                </span>
+              );
+            }
+            return (
+              <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>
+                  {lang === 'hi' ? `विश्वास: ${displayConf} (सटीक)` : `Confidence: ${displayConf} (High)`}
+                </span>
+              </span>
+            );
+          })()}
         </div>
 
         {/* Large Disease Name in High Contrast */}
@@ -265,6 +290,48 @@ export default function ResultScreen({
         </div>
 
       </div>
+
+      {/* 2B. LOW CONFIDENCE WARNING & GUIDANCE BANNER (< 80%) */}
+      {(result.isConfident === false || result.confidenceStatus === 'low_confidence') && (
+        <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-2 border-amber-400/80 rounded-3xl p-4 shadow-sm relative overflow-hidden">
+          <div className="flex items-start space-x-3">
+            <div className="w-9 h-9 rounded-2xl bg-amber-500 text-neutral-950 flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-black uppercase tracking-wider text-amber-900">
+                  {lang === 'hi' ? 'कम विश्वास स्तर / अनिश्चित पहचान' : 'Low Confidence / Uncertain Prediction'}
+                </h3>
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-300">
+                  &lt; 80%
+                </span>
+              </div>
+              <p className="text-xs text-amber-950 font-medium mt-1 leading-relaxed">
+                {lang === 'hi'
+                  ? (result.advisoryNoticeHi || result.advisoryNotice || `विश्वास स्कोर ${result.confidence} है जो 80% निश्चितता सीमा से कम है। शीर्ष संभावित स्थिति '${result.nameHindi}' है। कृपया रासायनिक उपचार से पहले अच्छी रोशनी में पत्ती/घाव की स्पष्ट क्लोज़-अप तस्वीर लें या विशेषज्ञ से सलाह लें।`)
+                  : (result.advisoryNotice || `Model confidence is ${result.confidence}, below the 80% certainty threshold. Matched condition is '${result.name}'. Before applying chemicals, please retake a closer, clearer photo in good lighting or consult an agricultural specialist.`)}
+              </p>
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  onClick={onScanAnother}
+                  className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-extrabold text-xs flex items-center space-x-1.5 shadow-sm transition-all"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>{lang === 'hi' ? 'फिर से स्पष्ट फोटो लें' : 'Retake Clearer Photo'}</span>
+                </button>
+                <button
+                  onClick={onOpenExpertModal}
+                  className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-amber-50 active:scale-95 text-amber-900 border border-amber-300 font-bold text-xs flex items-center space-x-1.5 shadow-xs transition-all"
+                >
+                  <PhoneCall className="w-3.5 h-3.5 text-amber-700" />
+                  <span>{lang === 'hi' ? 'विशेषज्ञ से पूछें' : 'Ask Specialist'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 3. PROMINENT RED BANNER: IF SEVERITY IS URGENT (RED) */}
       {isRed && (

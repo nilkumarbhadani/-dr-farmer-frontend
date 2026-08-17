@@ -182,11 +182,33 @@ export default function App() {
           )
         );
 
+        const rawScore = typeof data.confidence_score === 'number' ? data.confidence_score : null;
+        const hasConfidence = typeof data.confidence_percentage === 'number' || rawScore !== null;
+
+        const confPercent = typeof data.confidence_percentage === 'number'
+          ? `${data.confidence_percentage}%`
+          : (rawScore !== null ? `${Math.round(rawScore * 100)}%` : 'N/A');
+
+        const isConf = hasConfidence
+          ? (typeof data.is_confident === 'boolean'
+              ? data.is_confident
+              : (rawScore !== null ? rawScore >= (data.confidence_threshold || 0.80) : false))
+          : false;
+
+        const confStatus = data.confidence_status || (isConf ? 'confident' : 'low_confidence');
+
         diagnosisData = {
           name: data.pathology_detected || dbMatch?.name || 'Diagnosis Complete',
           nameHindi: data.pathology_detected_hi || dbMatch?.nameHindi || data.pathology_detected || 'जांच पूर्ण',
           severity: data.severity || (isHealthy ? 'healthy' : 'urgent'),
-          confidence: data.confidence_score ? `${Math.round(data.confidence_score * 100)}%` : (dbMatch?.confidence || '96%'),
+          confidence: confPercent,
+          confidenceScore: rawScore,
+          confidencePercentage: data.confidence_percentage ?? (rawScore !== null ? Math.round(rawScore * 100) : null),
+          confidenceThreshold: data.confidence_threshold ?? 0.80,
+          isConfident: isConf,
+          confidenceStatus: confStatus,
+          advisoryNotice: data.advisory_notice || null,
+          advisoryNoticeHi: data.advisory_notice_hi || null,
           imageUrl: imageUrl,
           symptomShort: dbMatch?.symptomShort || data.pathology_detected || 'Symptoms analyzed by Dr. Farmer AI.',
           category: mode,
@@ -217,7 +239,14 @@ export default function App() {
       diagnosisData = {
         ...fallbackItem,
         imageUrl: imageUrl,
-        confidence: '97%',
+        confidence: 'N/A',
+        confidenceScore: null,
+        confidencePercentage: null,
+        confidenceThreshold: 0.80,
+        isConfident: false,
+        confidenceStatus: 'low_confidence',
+        advisoryNotice: 'Live model prediction confidence is unavailable in offline fallback mode.',
+        advisoryNoticeHi: 'ऑफ़लाइन फॉलबैक मोड में लाइव मॉडल विश्वास स्कोर उपलब्ध नहीं है।',
       };
     }
 

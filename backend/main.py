@@ -54,6 +54,12 @@ app.add_middleware(
 )
 
 # ==========================================
+# CONFIDENCE THRESHOLD CONFIGURATION
+# Default: 0.80 (80%), configurable via CONFIDENCE_THRESHOLD env var (e.g. 0.80 - 0.85)
+# ==========================================
+CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.80"))
+
+# ==========================================
 # SUPABASE CONFIGURATION (GRACEFUL FALLBACK)
 # ==========================================
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").replace("/rest/v1", "").rstrip("/")
@@ -196,6 +202,7 @@ def read_root():
         "plant_model_loaded": plant_model_exists,
         "livestock_model_loaded": livestock_model_exists,
         "supabase_connected": supabase is not None,
+        "confidence_threshold": CONFIDENCE_THRESHOLD,
         "engine": "TFLite / LiteRT AI Engine (38 Plant / 2 Cattle Classes)" if (plant_interpreter is not None) else "TFLite Fallback Engine"
     }
 
@@ -349,6 +356,24 @@ async def diagnostic_scan(
             except Exception as db_err:
                 logger.warning(f"Supabase logging notice: {db_err}")
 
+        # ==========================================
+        # CONFIDENCE THRESHOLD EVALUATION (DEFAULT: 0.80 / 80%)
+        # ==========================================
+        is_confident = bool(confidence >= CONFIDENCE_THRESHOLD)
+        confidence_status = "confident" if is_confident else "low_confidence"
+
+        advisory_notice = None
+        advisory_notice_hi = None
+        if not is_confident:
+            advisory_notice = (
+                f"Confidence ({confidence * 100:.1f}%) is below the {int(CONFIDENCE_THRESHOLD * 100)}% certainty threshold. "
+                f"Top matched condition is '{pathology}'. For accurate confirmation, please capture a closer, clearer photo in good lighting."
+            )
+            advisory_notice_hi = (
+                f"विश्वास स्तर ({confidence * 100:.1f}%) निर्धारित सीमा {int(CONFIDENCE_THRESHOLD * 100)}% से कम है। "
+                f"शीर्ष संभावित स्थिति '{pathology_hi}' है। सटीक पहचान के लिए कृपया अच्छी रोशनी में स्पष्ट फोटो लें।"
+            )
+
         return {
             "scan_id": scan_id,
             "entity_type": entity_type,
@@ -356,6 +381,12 @@ async def diagnostic_scan(
             "pathology_detected_hi": pathology_hi,
             "severity": severity,
             "confidence_score": round(confidence, 4),
+            "confidence_percentage": round(confidence * 100, 2),
+            "confidence_threshold": CONFIDENCE_THRESHOLD,
+            "is_confident": is_confident,
+            "confidence_status": confidence_status,
+            "advisory_notice": advisory_notice,
+            "advisory_notice_hi": advisory_notice_hi,
             "medical_remedy": medical_remedy,
             "home_remedy": home_remedy,
             "raw_probabilities": raw_probabilities,
