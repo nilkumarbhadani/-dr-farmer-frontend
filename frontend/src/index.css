@@ -66,3 +66,183 @@ body {
   transform: scale(0.97);
   transition: transform 0.1s ease-in-out;
 }
+
+/* Subtle, calm invisible circular orbit floating keyframes for onboarding badges */
+@keyframes orbit-float-1 {
+  0% {
+    transform: rotate(45deg) translateX(86px) rotate(-45deg) translateY(0px);
+  }
+  25% {
+    transform: rotate(135deg) translateX(86px) rotate(-135deg) translateY(-3px);
+  }
+  50% {
+    transform: rotate(225deg) translateX(86px) rotate(-225deg) translateY(0px);
+  }
+  75% {
+    transform: rotate(315deg) translateX(86px) rotate(-315deg) translateY(3px);
+  }
+  100% {
+    transform: rotate(405deg) translateX(86px) rotate(-405deg) translateY(0px);
+  }
+}
+
+@keyframes orbit-float-2 {
+  0% {
+    transform: rotate(135deg) translateX(88px) rotate(-135deg) translateY(0px);
+  }
+  25% {
+    transform: rotate(225deg) translateX(88px) rotate(-225deg) translateY(3px);
+  }
+  50% {
+    transform: rotate(315deg) translateX(88px) rotate(-315deg) translateY(0px);
+  }
+  75% {
+    transform: rotate(405deg) translateX(88px) rotate(-405deg) translateY(-3px);
+  }
+  100% {
+    transform: rotate(495deg) translateX(88px) rotate(-495deg) translateY(0px);
+  }
+}
+
+@keyframes orbit-float-3 {
+  0% {
+    transform: rotate(225deg) translateX(86px) rotate(-225deg) translateY(0px);
+  }
+  25% {
+    transform: rotate(315deg) translateX(86px) rotate(-315deg) translateY(-3px);
+  }
+  50% {
+    transform: rotate(405deg) translateX(86px) rotate(-405deg) translateY(0px);
+  }
+  75% {
+    transform: rotate(495deg) translateX(86px) rotate(-495deg) translateY(3px);
+  }
+  100% {
+    transform: rotate(585deg) translateX(86px) rotate(-585deg) translateY(0px);
+  }
+}
+
+@keyframes orbit-float-4 {
+  0% {
+    transform: rotate(315deg) translateX(88px) rotate(-315deg) translateY(0px);
+  }
+  25% {
+    transform: rotate(405deg) translateX(88px) rotate(-405deg) translateY(3px);
+  }
+  50% {
+    transform: rotate(495deg) translateX(88px) rotate(-495deg) translateY(0px);
+  }
+  75% {
+    transform: rotate(585deg) translateX(88px) rotate(-585deg) translateY(-3px);
+  }
+  100% {
+    transform: rotate(675deg) translateX(88px) rotate(-675deg) translateY(0px);
+  }
+}
+
+.animate-orbit-1 {
+  animation: orbit-float-1 28s linear infinite;
+}
+
+.animate-orbit-2 {
+  animation: orbit-float-2 28s linear infinite;
+}
+
+.animate-orbit-3 {
+  animation: orbit-float-3 28s linear infinite;
+}
+
+.animate-orbit-4 {
+  animation: orbit-float-4 28s linear infinite;
+}
+
+/* Modal-sized orbit keyframes (slightly tighter radius) */
+@keyframes orbit-modal-1 {
+  0% {
+    transform: rotate(45deg) translateX(72px) rotate(-45deg) translateY(0px);
+  }
+  25% {
+    transform: rotate(135deg) translateX(72px) rotate(-135deg) translateY(-3px);
+  }
+  50% {
+    transform: rotate(225deg) translateX(72px) rotate(-225deg) translateY(0px);
+  }
+  75% {
+    transform: rotate(315deg) translateX(72px) rotate(-315deg) translateY(3px);
+  }
+  100% {
+    transform: rotate(405deg) translateX(72px) rotate(-405deg) translateY(0px);
+  }
+}
+
+@keyframes orbit-modal-2 {
+  0% {
+    transform: rotate(135deg) translateX(74px) rotate(-135deg) translateY(0px);
+  }
+  25% {
+    transform: rotate(225deg) translateX(74px) rotate(-225deg) translateY(3px);
+  }
+  50% {
+    transform: rotate(315deg) translateX(74px) rotate(-315deg) translateY(0px);
+  }
+  75% {
+    transform: rotate(405deg) translateX(74px) rotate(-405deg) translateY(-3px);
+  }
+  100% {
+    transform: rotate(495deg) translateX(74px) rotate(-495deg) translateY(0px);
+  }
+}
+
+@keyframes orbit-modal-3 {
+  0% {
+    transform: rotate(225deg) translateX(72px) rotate(-225deg) translateY(0px);
+  }
+  25% {
+    transform: rotate(315deg) translateX(72px) rotate(-315deg) translateY(-3px);
+  }
+  50% {
+    transform: rotate(405deg) translateX(72px) rotate(-405deg) translateY(0px);
+  }
+  75% {
+    transform: rotate(495deg) translateX(72px) rotate(-495deg) translateY(3px);
+  }
+  100% {
+    transform: rotate(585deg) translateX(72px) rotate(-585deg) translateY(0px);
+  }
+}
+
+@keyframes orbit-modal-4 {
+  0% {
+    transform: rotate(315deg) translateX(74px) rotate(-315deg) translateY(0px);
+  }
+  25% {
+    transform: rotate(405deg) translateX(74px) rotate(-405deg) translateY(3px);
+  }
+  50% {
+    transform: rotate(495deg) translateX(74px) rotate(-495deg) translateY(0px);
+  }
+  75% {
+    transform: rotate(585deg) translateX(74px) rotate(-585deg) translateY(-3px);
+  }
+  100% {
+    transform: rotate(675deg) translateX(74px) rotate(-675deg) translateY(0px);
+  }
+}
+
+.animate-orbit-modal-1 {
+  animation: orbit-modal-1 28s linear infinite;
+}
+
+.animate-orbit-modal-2 {
+  animation: orbit-modal-2 28s linear infinite;
+}
+
+.animate-orbit-modal-3 {
+  animation: orbit-modal-3 28s linear infinite;
+}
+
+.animate-orbit-modal-4 {
+  animation: orbit-modal-4 28s linear infinite;
+}
+
+

@@ -2,27 +2,124 @@ import React, { useState } from 'react';
 import { 
   ArrowRight, 
   ArrowLeft, 
-  CheckCircle2, 
-  Camera, 
   Sparkles, 
-  BookOpen, 
-  Volume2, 
   ShieldCheck, 
-  PhoneCall, 
-  Cloud,
-  Layers,
-  HeartPulse
+  Volume2, 
+  Leaf, 
+  HeartPulse, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Globe,
+  Stethoscope,
+  X
 } from 'lucide-react';
 import logo from '../assets/logo.png';
 
-export default function OnboardingModal({ isOpen, onClose, lang }) {
+export default function OnboardingModal({ isOpen, onClose, lang = 'en' }) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [isExiting, setIsExiting] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
 
   if (!isOpen) return null;
 
-  const minSwipeDistance = 50;
+  const isHi = lang === 'hi';
+
+  const slides = [
+    // SLIDE 1 — AI DIAGNOSIS
+    {
+      badge: isHi ? 'एआई जांच' : 'AI Diagnosis',
+      badgeIcon: <Sparkles className="w-3 h-3 text-emerald-600" />,
+      title: isHi 
+        ? 'फसल और पशु रोगों की तुरंत पहचान' 
+        : 'Instant Crop & Livestock Diagnosis',
+      description: isHi
+        ? 'फसल की पत्ती या पशु के लक्षणों की फोटो लें और कुछ ही सेकंड में एआई द्वारा बीमारी का पता लगाएं।'
+        : 'Snap a photo of a crop leaf or animal symptom and get AI-powered disease insights in seconds.',
+      features: [
+        {
+          icon: <Sparkles className="w-4 h-4 text-emerald-600" />,
+          title: isHi ? '3-सेकंड त्वरित स्कैन' : '3-Sec AI Scan',
+          desc: isHi ? 'कैमरे से तुरंत AI विश्लेषण' : 'Instant camera & gallery analysis'
+        },
+        {
+          icon: <Leaf className="w-4 h-4 text-green-700" />,
+          title: isHi ? 'फसल व पशु रोग पहचान' : 'Crop & Livestock Detection',
+          desc: isHi ? '38+ फसलें एवं मवेशी लक्षण' : '38+ crops & cattle health conditions'
+        },
+        {
+          icon: <HeartPulse className="w-4 h-4 text-rose-600" />,
+          title: isHi ? 'सटीक रोग निदान' : 'Disease Identification',
+          desc: isHi ? 'लक्षणों की तुरंत सही पहचान' : 'Accurate visual symptom detection'
+        }
+      ]
+    },
+
+    // SLIDE 2 — SMART & SAFE GUIDANCE
+    {
+      badge: isHi ? 'सुरक्षित मार्गदर्शन' : 'Smart & Safe Guidance',
+      badgeIcon: <ShieldCheck className="w-3 h-3 text-blue-600" />,
+      title: isHi 
+        ? 'हर जांच पर सटीक व सुरक्षित सलाह' 
+        : 'Smart Guidance for Every Scan',
+      description: isHi
+        ? 'कॉन्फिडेंस स्कोर, सुरक्षित देसी नुस्खे और उपचार गाइड के साथ खेती के बेहतर और सुरक्षित फैसले लें।'
+        : 'Get confidence-aware results, practical home remedies, and treatment guidance designed for safer farming decisions.',
+      features: [
+        {
+          icon: <CheckCircle2 className="w-4 h-4 text-emerald-600" />,
+          title: isHi ? 'सटीकता स्कोर' : 'Confidence Score',
+          desc: isHi ? 'हर परिणाम पर स्पष्ट सटीकता' : 'Full transparency on scan certainty'
+        },
+        {
+          icon: <Leaf className="w-4 h-4 text-amber-600" />,
+          title: isHi ? 'देसी नुस्खे' : 'Home Remedies',
+          desc: isHi ? 'कम लागत वाले प्राकृतिक उपचार' : 'Zero-cost organic natural treatments'
+        },
+        {
+          icon: <Stethoscope className="w-4 h-4 text-teal-600" />,
+          title: isHi ? 'दवा व उपचार गाइड' : 'Treatment Guidance',
+          desc: isHi ? 'अनुमोदित सुरक्षित रासायनिक दवाएं' : 'Safe veterinary & agricultural advisory'
+        },
+        {
+          icon: <AlertTriangle className="w-4 h-4 text-amber-600" />,
+          title: isHi ? 'सुरक्षा चेतावनी' : 'Low-Confidence Safety Alerts',
+          desc: isHi ? 'संदेह होने पर गलत सलाह नहीं' : 'Alerts user when photo is unclear'
+        }
+      ]
+    },
+
+    // SLIDE 3 — VOICE & FARMER-FRIENDLY
+    {
+      badge: isHi ? 'भारतीय किसान हितैषी' : 'Built for Indian Farmers',
+      badgeIcon: <Volume2 className="w-3 h-3 text-amber-600" />,
+      title: isHi 
+        ? 'भारतीय किसानों के लिए विशेष रूप से निर्मित' 
+        : 'Built for Indian Farmers',
+      description: isHi
+        ? 'सरल भाषा, आवाज़ में सलाह (Voice Guide) और अपनी स्थानीय भाषा में सम्पूर्ण मार्गदर्शन पाएं।'
+        : 'Understand your diagnosis with simple language, voice guidance, and regional-language support.',
+      features: [
+        {
+          icon: <Volume2 className="w-4 h-4 text-amber-600" />,
+          title: isHi ? 'बोलकर सलाह (Voice Guide)' : 'Voice Guide',
+          desc: isHi ? 'एक टैप में पूरी रिपोर्ट सुनें' : 'Audio read-aloud in regional tongues'
+        },
+        {
+          icon: <Globe className="w-4 h-4 text-blue-600" />,
+          title: isHi ? 'हिंदी और अंग्रेजी' : 'Hindi & English',
+          desc: isHi ? 'क्षेत्रीय भाषाओं का आसान विकल्प' : 'Multiple Indian language options'
+        },
+        {
+          icon: <Sparkles className="w-4 h-4 text-emerald-600" />,
+          title: isHi ? 'सरल किसान-हितैषी सलाह' : 'Simple Farmer-Friendly Advice',
+          desc: isHi ? 'आसान व व्यावहारिक समाधान' : 'Jargon-free practical solutions'
+        }
+      ]
+    }
+  ];
+
+  const minSwipeDistance = 45;
 
   const onTouchStartHandler = (e) => {
     setTouchEnd(null);
@@ -47,124 +144,11 @@ export default function OnboardingModal({ isOpen, onClose, lang }) {
     }
   };
 
-  const isHi = lang === 'hi';
-
-  const slides = [
-    // SLIDE 1: App Overview & Purpose
-    {
-      badge: isHi ? 'परिचय' : 'About Dr. Farmer',
-      title: isHi 
-        ? 'डॉ. फार्मर — फसल व पशु रोगों का AI डॉक्टर' 
-        : 'Dr. Farmer — Instant AI Crop & Livestock Health Advisor',
-      subtitle: isHi
-        ? 'भारतीय किसानों के लिए विशेष रूप से निर्मित स्मार्ट कृषि निदान प्रणाली।'
-        : 'Empowering Indian farmers with instant, localized diagnosis for 38+ crop diseases and cattle health.',
-      iconBadges: ['🌱', '🐄', '📱', '🩺'],
-      cards: [
-        {
-          icon: <Sparkles className="w-4 h-4 text-emerald-600" />,
-          title: isHi ? '३ सेकंड में त्वरित जांच' : '3-Sec Instant Scan',
-          desc: isHi ? 'पत्ती या पशु की फोटो से तुरंत पहचान' : 'Real-time TFLite AI disease detection'
-        },
-        {
-          icon: <Volume2 className="w-4 h-4 text-amber-600" />,
-          title: isHi ? 'बोलकर सलाह (आवाज़)' : 'Spoken Voice Guide',
-          desc: isHi ? 'क्षेत्रीय भाषाओं में ऑडियो गाइड' : 'Voice narration in multiple languages'
-        },
-        {
-          icon: <ShieldCheck className="w-4 h-4 text-blue-600" />,
-          title: isHi ? 'दोहरा उपचार' : 'Dual Treatment',
-          desc: isHi ? 'घरेलू देसी नुस्खे + डॉक्टरी दवाई' : 'Organic home remedies & vet prescriptions'
-        },
-        {
-          icon: <Cloud className="w-4 h-4 text-purple-600" />,
-          title: isHi ? 'क्लाउड सुरक्षित' : 'Supabase Cloud Sync',
-          desc: isHi ? 'रिकॉर्ड कभी नहीं खोएंगे' : 'Safe cloud data storage & history'
-        }
-      ]
-    },
-
-    // SLIDE 2: How to Use (3 Simple Steps)
-    {
-      badge: isHi ? 'उपयोग विधि' : 'How It Works',
-      title: isHi 
-        ? 'ऐप का उपयोग कैसे करें?' 
-        : 'How to Use Dr. Farmer in 3 Simple Steps',
-      subtitle: isHi
-        ? 'स्मार्टफोन कैमरा से बस ३ आसान चरणों में रोग पहचानें और इलाज पाएं।'
-        : 'Point, capture, and get full advisory with zero complicated technical steps.',
-      iconBadges: ['1️⃣', '2️⃣', '3️⃣', '✅'],
-      howToSteps: [
-        {
-          number: '1',
-          icon: <Layers className="w-5 h-5 text-emerald-700" />,
-          title: isHi ? '१. फसल या पशु मोड चुनें' : '1. Select Mode',
-          desc: isHi 
-            ? 'फसल की पत्ती के लिए "फसल" या गाय-भैंस के लिए "पशु" चुनें।' 
-            : 'Choose Crop (फसल) for leaf ailments or Livestock (पशु) for cattle conditions.'
-        },
-        {
-          number: '2',
-          icon: <Camera className="w-5 h-5 text-amber-600" />,
-          title: isHi ? '२. प्रभावित भाग की फोटो लें' : '2. Snap a Clear Photo',
-          desc: isHi 
-            ? 'रोगग्रस्त पत्ते या त्वचा की साफ फोटो खींचें या गैलरी से अपलोड करें।' 
-            : 'Point your camera closely at the diseased leaf spots or animal skin nodules.'
-        },
-        {
-          number: '3',
-          icon: <HeartPulse className="w-5 h-5 text-rose-600" />,
-          title: isHi ? '३. निदान व उपचार देखें' : '3. Get Diagnosis & Remedies',
-          desc: isHi 
-            ? 'तुरंत रोग का नाम, गंभीरता, देसी घरेलू नुस्खे और रासायनिक उपचार पाएं।' 
-            : 'Instant diagnosis with confidence score, organic remedies, and audio narration.'
-        }
-      ]
-    },
-
-    // SLIDE 3: Key Features (Record Book & Expert Helpline)
-    {
-      badge: isHi ? 'विशेष सुविधाएं' : 'Smart Tools & Features',
-      title: isHi 
-        ? 'खेत रिकॉर्ड बुक और विशेषज्ञ परामर्श' 
-        : 'Farm Record Book & Urgent Expert Hotline',
-      subtitle: isHi
-        ? 'अपनी फसलों और मवेशियों की पूरी स्वास्थ्य डायरी हमेशा अपने साथ रखें।'
-        : 'Track your sowing cycles, vaccination dates, and reach agricultural specialists instantly.',
-      iconBadges: ['📖', '📞', '🌦️', '🌾'],
-      tools: [
-        {
-          icon: <BookOpen className="w-5 h-5 text-emerald-600" />,
-          title: isHi ? 'डिजिटल खेत डायरी (Record Book)' : 'Digital Farm Record Book',
-          desc: isHi 
-            ? 'बुवाई की तारीख, कटाई समय और कीटनाशक सुरक्षा का आसान लेखा-जोखा।' 
-            : 'Track sowing schedules, estimated harvest dates, and pesticide safety status.'
-        },
-        {
-          icon: <PhoneCall className="w-5 h-5 text-red-600" />,
-          title: isHi ? 'आपातकालीन विशेषज्ञ कॉल' : 'Urgent Expert Call Hotline',
-          desc: isHi 
-            ? 'गंभीर स्थिति में एक क्लिक पर किसान कॉल सेंटर (1800-180-1551) से जुड़ें।' 
-            : 'One-tap dialer connecting directly to Kisan Call Center & veterinary helplines.'
-        },
-        {
-          icon: <CheckCircle2 className="w-5 h-5 text-blue-600" />,
-          title: isHi ? 'पशु टीकाकरण रिमाइंडर' : 'Livestock Vaccination Tracker',
-          desc: isHi 
-            ? 'गाय और भैंस के खुरपका-मुंहपका व अन्य टीकों की समय सारणी।' 
-            : 'Stay ahead of FMD, Black Quarter, and seasonal cattle vaccination due dates.'
-        }
-      ]
-    }
-  ];
-
-  const currentSlide = slides[currentStep];
-
   const handleNext = () => {
     if (currentStep < slides.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
-      onClose();
+      handleCloseWithAnimation();
     }
   };
 
@@ -174,113 +158,182 @@ export default function OnboardingModal({ isOpen, onClose, lang }) {
     }
   };
 
+  const handleCloseWithAnimation = () => {
+    if (isExiting) return;
+    setIsExiting(true);
+    setTimeout(() => {
+      onClose();
+      setIsExiting(false);
+      setCurrentStep(0);
+    }, 300);
+  };
+
+  const currentSlide = slides[currentStep];
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+    <div className={`fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 transition-opacity duration-300 ${
+      isExiting ? 'opacity-0' : 'opacity-100'
+    }`}>
       <div 
-        className="w-full max-w-sm bg-gradient-to-b from-[#f7f3ea] via-[#f4eee2] to-[#e8decb] rounded-[36px] overflow-hidden shadow-2xl border border-[#ded4c1] relative flex flex-col justify-between max-h-[95vh] select-none transition-all duration-300"
+        className={`w-full max-w-sm bg-[#fbf9f4] rounded-[32px] overflow-hidden shadow-2xl border border-[#ded4c1] relative flex flex-col justify-between max-h-[92vh] select-none transition-all duration-300 ${
+          isExiting ? 'scale-[0.96] translate-y-2' : 'scale-100 translate-y-0'
+        }`}
         onTouchStart={onTouchStartHandler}
         onTouchMove={onTouchMoveHandler}
         onTouchEnd={onTouchEndHandler}
       >
         
         {/* Top Header Bar */}
-        <div className="pt-4 px-6 flex justify-between items-center text-[11px] font-bold text-[#625949]">
-          <span className="bg-white/70 px-2 py-0.5 rounded-full border border-white/80 text-emerald-800 text-[10px]">
-            {currentSlide.badge} ({currentStep + 1}/3)
+        <div className="pt-4 px-5 flex justify-between items-center text-[11px] font-bold text-[#625949]">
+          <span className="inline-flex items-center space-x-1 bg-emerald-50 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-200/80">
+            {currentSlide.badgeIcon}
+            <span>{currentSlide.badge} ({currentStep + 1}/3)</span>
           </span>
+          
           <button 
-            onClick={onClose}
-            className="text-[11px] text-[#786c58] hover:text-[#1b2e1b] font-bold px-2 py-1 rounded-full hover:bg-black/5 transition-colors"
+            onClick={handleCloseWithAnimation}
+            className="p-1 rounded-full text-[#786c58] hover:text-[#1b2e1b] hover:bg-black/5 transition-colors"
+            title="Close"
           >
-            {isHi ? 'छोड़ें (Skip)' : 'Skip'}
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Dynamic Slide Content Container */}
-        <div className="px-6 py-2 flex flex-col items-center text-center overflow-y-auto">
+        {/* Dynamic Slide Content */}
+        <div className="px-5 py-2 flex flex-col items-center text-center overflow-y-auto no-scrollbar">
           
-          {/* Logo / Visual Graphic */}
-          <div className="relative w-32 h-32 my-1 flex items-center justify-center">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-emerald-300/40 via-amber-200/40 to-lime-200/40 blur-md animate-pulse" />
+          {/* Logo / Mascot Section with Invisible Orbit Floating Badges */}
+          <div className="relative w-32 h-32 my-1 flex items-center justify-center shrink-0">
+            <div className="absolute inset-1 rounded-full bg-emerald-200/25 blur-md pointer-events-none" />
             <img
               src={logo}
               alt="Dr. Farmer Emblem"
-              className="relative z-10 w-24 h-24 rounded-full object-contain shadow-md border-4 border-white select-none transition-transform duration-300 transform scale-100 hover:scale-105"
+              className="relative z-10 w-full h-full object-contain filter drop-shadow-sm"
+              draggable={false}
             />
 
-            {/* Orbiting feature badges */}
-            {currentSlide.iconBadges.map((emoji, idx) => {
-              const positions = [
-                'top-0 left-1 bg-orange-500',
-                'top-0 right-1 bg-emerald-600',
-                'bottom-1 left-0 bg-amber-500',
-                'bottom-1 right-0 bg-blue-600'
-              ];
-              return (
+            {/* 4 Subtle Floating Agricultural & AI Elements with Invisible Circular Orbit */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+              <div className="animate-orbit-modal-1">
                 <div 
-                  key={idx} 
-                  className={`absolute w-7 h-7 rounded-full text-white flex items-center justify-center text-xs shadow-md border-2 border-white transform transition-all duration-300 ${positions[idx]}`}
+                  className="w-5.5 h-5.5 rounded-full bg-white/95 backdrop-blur-xs border border-[#ded4c1]/85 shadow-2xs flex items-center justify-center text-[10px] select-none pointer-events-none"
+                  title="Agriculture"
                 >
-                  {emoji}
+                  🌾
                 </div>
-              );
-            })}
+              </div>
+            </div>
+
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+              <div className="animate-orbit-modal-2">
+                <div 
+                  className="w-5.5 h-5.5 rounded-full bg-white/95 backdrop-blur-xs border border-[#ded4c1]/85 shadow-2xs flex items-center justify-center text-[10px] select-none pointer-events-none"
+                  title="Plant Health"
+                >
+                  🍃
+                </div>
+              </div>
+            </div>
+
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+              <div className="animate-orbit-modal-3">
+                <div 
+                  className="w-5.5 h-5.5 rounded-full bg-white/95 backdrop-blur-xs border border-[#ded4c1]/85 shadow-2xs flex items-center justify-center text-[10px] select-none pointer-events-none"
+                  title="Livestock Health"
+                >
+                  🐄
+                </div>
+              </div>
+            </div>
+
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+              <div className="animate-orbit-modal-4">
+                <div 
+                  className="w-5.5 h-5.5 rounded-full bg-white/95 backdrop-blur-xs border border-[#ded4c1]/85 shadow-2xs flex items-center justify-center text-[10px] select-none pointer-events-none"
+                  title="AI Vision Scan"
+                >
+                  📷
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Clean Dr. Farmer Brand Typography with Green Underline & Flanking Leaves */}
+          <div className="flex flex-col items-center justify-center mt-0.5 mb-1 select-none">
+            <span className="text-[16px] sm:text-[17px] font-black text-[#163816] tracking-tight">
+              Dr. Farmer
+            </span>
+            
+            {/* Subtle green underline with leaves */}
+            <div className="flex items-center justify-center space-x-1.5 mt-0.5">
+              <svg className="w-2.5 h-2.5 text-emerald-700 -scale-x-100 rotate-12 opacity-80" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/>
+              </svg>
+              <div className="w-14 sm:w-16 h-[1.5px] rounded-full bg-gradient-to-r from-emerald-600/30 via-emerald-700 to-emerald-600/30" />
+              <svg className="w-2.5 h-2.5 text-emerald-700 -rotate-12 opacity-80" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/>
+              </svg>
+            </div>
           </div>
 
           {/* Heading */}
-          <h2 className="text-xl font-black text-[#1b2e1b] tracking-tight leading-snug mt-1">
-            {currentSlide.title}
-          </h2>
-          
-          <p className="text-[11px] text-[#5c685c] font-medium mt-1 leading-relaxed max-w-[290px]">
-            {currentSlide.subtitle}
-          </p>
+          <div className="max-w-[280px] mx-auto min-h-[58px] flex flex-col items-center justify-center">
+            <h2 className="text-base sm:text-lg font-black text-[#163816] tracking-tight leading-tight">
+              {currentSlide.title}
+            </h2>
+            <p className="text-[10.5px] sm:text-[11px] text-[#4d5c4d] font-medium mt-0.5 leading-relaxed">
+              {currentSlide.description}
+            </p>
+          </div>
 
-          {/* Interactive Slide Body */}
+          {/* Slide Features */}
           <div className="w-full mt-3">
-            {/* SLIDE 1: Feature Cards */}
+            {/* Slide 1 */}
             {currentStep === 0 && (
-              <div className="grid grid-cols-2 gap-2 text-left">
-                {currentSlide.cards.map((card, idx) => (
-                  <div key={idx} className="bg-white/85 backdrop-blur-xs p-2 rounded-xl border border-white/80 shadow-2xs">
-                    <div className="flex items-center space-x-1.5 mb-0.5">
-                      {card.icon}
-                      <span className="text-[11px] font-bold text-[#1b2e1b]">{card.title}</span>
+              <div className="space-y-1.5 text-left animate-fadeIn">
+                {currentSlide.features.map((feat, idx) => (
+                  <div key={idx} className="bg-white/90 px-2.5 py-1.5 rounded-xl border border-[#ded4c1]/70 shadow-2xs flex items-center space-x-2">
+                    <div className="p-1 rounded-md bg-emerald-50 shrink-0">
+                      {feat.icon}
                     </div>
-                    <p className="text-[9.5px] text-[#637063] leading-tight">{card.desc}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] font-bold text-[#1b2e1b] leading-tight">{feat.title}</div>
+                      <div className="text-[9px] text-[#5e6d5e] leading-tight">{feat.desc}</div>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* SLIDE 2: How It Works Steps */}
+            {/* Slide 2 */}
             {currentStep === 1 && (
-              <div className="space-y-1.5 text-left">
-                {currentSlide.howToSteps.map((st, idx) => (
-                  <div key={idx} className="bg-white/85 backdrop-blur-xs p-2 rounded-xl border border-white/80 shadow-2xs flex items-start space-x-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">
-                      {st.number}
+              <div className="grid grid-cols-2 gap-1.5 text-left animate-fadeIn">
+                {currentSlide.features.map((feat, idx) => (
+                  <div key={idx} className="bg-white/90 p-2 rounded-xl border border-[#ded4c1]/70 shadow-2xs flex flex-col justify-between">
+                    <div className="flex items-center space-x-1 mb-0.5">
+                      <div className="p-0.5 rounded bg-emerald-50 shrink-0">
+                        {feat.icon}
+                      </div>
+                      <span className="text-[10.5px] font-bold text-[#1b2e1b] truncate">{feat.title}</span>
                     </div>
-                    <div>
-                      <h4 className="text-[11.5px] font-bold text-[#1b2e1b] leading-tight">{st.title}</h4>
-                      <p className="text-[9.5px] text-[#5c685c] leading-tight mt-0.5">{st.desc}</p>
-                    </div>
+                    <p className="text-[9px] text-[#5e6d5e] leading-tight">{feat.desc}</p>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* SLIDE 3: Smart Tools & Record Book */}
+            {/* Slide 3 */}
             {currentStep === 2 && (
-              <div className="space-y-1.5 text-left">
-                {currentSlide.tools.map((tl, idx) => (
-                  <div key={idx} className="bg-white/85 backdrop-blur-xs p-2.5 rounded-xl border border-white/80 shadow-2xs flex items-start space-x-2.5">
-                    <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 shrink-0 mt-0.5">
-                      {tl.icon}
+              <div className="space-y-1.5 text-left animate-fadeIn">
+                {currentSlide.features.map((feat, idx) => (
+                  <div key={idx} className="bg-white/90 px-2.5 py-1.5 rounded-xl border border-[#ded4c1]/70 shadow-2xs flex items-center space-x-2">
+                    <div className="p-1 rounded-md bg-amber-50 shrink-0">
+                      {feat.icon}
                     </div>
-                    <div>
-                      <h4 className="text-[11.5px] font-bold text-[#1b2e1b] leading-tight">{tl.title}</h4>
-                      <p className="text-[9.5px] text-[#5c685c] leading-tight mt-0.5">{tl.desc}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] font-bold text-[#1b2e1b] leading-tight">{feat.title}</div>
+                      <div className="text-[9px] text-[#5e6d5e] leading-tight">{feat.desc}</div>
                     </div>
                   </div>
                 ))}
@@ -288,16 +341,16 @@ export default function OnboardingModal({ isOpen, onClose, lang }) {
             )}
           </div>
 
-          {/* Interactive Carousel Dots Indicator */}
-          <div className="flex items-center space-x-2 mt-3.5 mb-1">
+          {/* Dots Indicator */}
+          <div className="flex items-center space-x-2 mt-3.5 mb-0.5">
             {slides.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrentStep(idx)}
-                aria-label={`Go to slide ${idx + 1}`}
+                aria-label={`Slide ${idx + 1}`}
                 className={`transition-all duration-300 rounded-full ${
                   currentStep === idx 
-                    ? 'w-6 h-2 bg-[#1b5e20] shadow-sm' 
+                    ? 'w-6 h-2 bg-[#1b5e20] shadow-2xs' 
                     : 'w-2 h-2 bg-[#c8beaa] hover:bg-[#a89e8a]'
                 }`}
               />
@@ -306,22 +359,22 @@ export default function OnboardingModal({ isOpen, onClose, lang }) {
 
         </div>
 
-        {/* Bottom Navigation Buttons (Prev / Next / Get Started) */}
-        <div className="p-5 pt-1">
+        {/* Bottom Buttons */}
+        <div className="p-4 pt-1">
           <div className="flex items-center space-x-2">
             {currentStep > 0 && (
               <button
                 onClick={handlePrev}
-                className="py-3 px-4 rounded-full bg-white/80 hover:bg-white text-[#2a382a] font-bold text-xs flex items-center justify-center border border-white/80 shadow-sm active:scale-95 transition-all"
+                className="py-3 px-3.5 rounded-full bg-white/90 hover:bg-white text-[#2a382a] font-bold text-xs flex items-center justify-center border border-[#ded4c1] shadow-2xs active:scale-95 transition-all"
               >
-                <ArrowLeft className="w-4 h-4 mr-1" />
+                <ArrowLeft className="w-3.5 h-3.5 mr-0.5" />
                 <span>{isHi ? 'पीछे' : 'Back'}</span>
               </button>
             )}
 
             <button
               onClick={handleNext}
-              className="flex-1 py-3.5 px-6 rounded-full bg-[#171614] hover:bg-black text-white font-extrabold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-xl shadow-black/25 active:scale-95 transition-all"
+              className="flex-1 py-3 px-5 rounded-full bg-[#181816] hover:bg-black text-white font-extrabold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-xl shadow-black/20 active:scale-[0.96] transition-all"
             >
               <span>
                 {currentStep === slides.length - 1 
